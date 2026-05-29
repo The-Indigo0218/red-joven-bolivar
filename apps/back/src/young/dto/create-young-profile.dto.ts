@@ -7,6 +7,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { INTEREST_SLUGS } from '../../common/interests';
 import type {
   Availability,
   EducationLevel,
@@ -31,6 +32,14 @@ const SEEKING_TYPES: SeekingType[] = [
   'todos',
 ];
 
+const AVAILABILITY_OPTIONS: Availability[] = [
+  'manana',
+  'tarde',
+  'noche',
+  'fines-de-semana',
+  'tiempo-completo',
+];
+
 // Contrato de POST /young/profile (ver docs/API_CONTRACTS.md).
 export class CreateYoungProfileDto {
   @IsString()
@@ -52,9 +61,11 @@ export class CreateYoungProfileDto {
 
   @IsArray()
   @ArrayNotEmpty()
+  @IsIn(AVAILABILITY_OPTIONS, { each: true })
   availability!: Availability[];
 
   @IsArray()
   @ArrayNotEmpty()
+  @IsIn(INTEREST_SLUGS, { each: true })
   interests!: InterestSlug[];
 }

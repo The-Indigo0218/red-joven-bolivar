@@ -1,18 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import type { CreateYoungProfileDto } from './dto/create-young-profile.dto';
-import type { YoungProfile } from './young.entity';
+import { YoungProfile } from './young.entity';
 
-// Perfil del joven, intereses y disponibilidad.
-// Estructura lista para construir — sin lógica de persistencia todavía.
+// Perfil del joven, intereses y disponibilidad. Cada perfil creado es una
+// señal de demanda que DemandModule agrega en vivo.
 @Injectable()
 export class YoungService {
-  create(_dto: CreateYoungProfileDto): Promise<YoungProfile> {
-    // TODO: persistir con el repositorio de TypeORM y registrar la señal de demanda.
-    throw new Error('Not implemented');
+  constructor(
+    @InjectRepository(YoungProfile)
+    private readonly youngRepo: Repository<YoungProfile>,
+  ) {}
+
+  create(dto: CreateYoungProfileDto): Promise<YoungProfile> {
+    const profile = this.youngRepo.create(dto);
+    return this.youngRepo.save(profile);
   }
 
-  findOne(_id: string): Promise<YoungProfile> {
-    // TODO: buscar perfil por id.
-    throw new Error('Not implemented');
+  async findOne(id: string): Promise<YoungProfile> {
+    const profile = await this.youngRepo.findOne({ where: { id } });
+    if (!profile) {
+      throw new NotFoundException(`Perfil de joven ${id} no encontrado`);
+    }
+    return profile;
   }
 }
