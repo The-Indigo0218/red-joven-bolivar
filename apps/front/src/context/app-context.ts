@@ -1,24 +1,26 @@
-import { createContext } from 'react';
-import type {
-  CreateYoungProfileRequest,
-  MatchResponse,
-  Opportunity,
-  YoungProfileResponse,
-} from '../types';
-
-export interface AppContextValue {
-  profile: YoungProfileResponse | null;
-  opportunities: Opportunity[];
-  matches: MatchResponse[];
-  isLoadingOpportunities: boolean;
-  opportunitiesError: string | null;
-  isSavingProfile: boolean;
-  interestLoadingId: string | null;
-  saveProfile: (request: CreateYoungProfileRequest) => Promise<YoungProfileResponse>;
-  clearProfile: () => void;
-  expressInterest: (opportunityId: string) => Promise<MatchResponse | null>;
-  isInterestedIn: (opportunityId: string) => boolean;
-  refreshOpportunities: () => Promise<void>;
-}
-
-export const AppContext = createContext<AppContextValue | null>(null);
+import { createContext } from 'react';
+import type {
+  CreateYoungProfileRequest,
+  InterestResult,
+  Opportunity,
+  YoungProfileResponse,
+} from '../types';
+
+export interface AppContextValue {
+  profile: YoungProfileResponse | null;
+  opportunities: Opportunity[];
+  interests: InterestResult[];
+  isLoadingOpportunities: boolean;
+  opportunitiesError: string | null;
+  isSavingProfile: boolean;
+  interestLoadingId: string | null;
+  saveProfile: (request: CreateYoungProfileRequest) => Promise<YoungProfileResponse>;
+  clearProfile: () => void;
+  expressInterest: (opportunityId: string) => Promise<InterestResult | null>;
+  isInterestedIn: (opportunityId: string) => boolean;
+  isWaitlisted: (opportunityId: string) => boolean;
+  getWaitlistPosition: (opportunityId: string) => number | null;
+  refreshOpportunities: () => Promise<void>;
+}
+
+export const AppContext = createContext<AppContextValue | null>(null);

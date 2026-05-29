@@ -1,13 +1,20 @@
-import type { Opportunity, OpportunityKind, YoungProfileResponse } from '../types';
+import type {
+  Opportunity,
+  OpportunityKind,
+  OpportunityModality,
+  YoungProfileResponse,
+} from '../types';
 
 export function filterOpportunities(
   opportunities: Opportunity[],
   kind: OpportunityKind,
   profile: YoungProfileResponse | null,
+  modalidad?: OpportunityModality,
 ): Opportunity[] {
   return opportunities
     .filter((opp) => {
       if (opp.kind !== kind) return false;
+      if (modalidad && opp.modalidad !== modalidad) return false;
       if (!profile) return false;
 
       const interestMatch = opp.interests.some((interest) =>

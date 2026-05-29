@@ -10,7 +10,7 @@ import type {
   EarnCivicCoinsResponse,
   ExpressInterestRequest,
   GrowthRouteResponse,
-  MatchResponse,
+  InterestResult,
   OpportunitiesQuery,
   OpportunitiesResponse,
   Opportunity,
@@ -19,6 +19,8 @@ import type {
   SuggestedActivitiesResponse,
   UploadCvRequest,
   UploadCvResponse,
+  WaitlistItem,
+  WaitlistResponse,
   YoungProfileResponse,
 } from '../types';
 import {
@@ -45,12 +47,36 @@ function saveOpportunities(items: Opportunity[]): void {
   saveToStorage(storageKeys.opportunities, items);
 }
 
-function getMatches(): MatchResponse[] {
-  return loadFromStorage<MatchResponse[]>(storageKeys.matches, []);
+function getInterests(): InterestResult[] {
+  const stored = loadFromStorage<unknown[]>(storageKeys.matches, []);
+  return stored
+    .map(normalizeInterest)
+    .filter((item): item is InterestResult => item !== null);
 }
 
-function saveMatches(items: MatchResponse[]): void {
+function saveInterests(items: InterestResult[]): void {
   saveToStorage(storageKeys.matches, items);
+}
+
+function normalizeInterest(raw: unknown): InterestResult | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const item = raw as Record<string, unknown>;
+  if (!item.youngId || !item.opportunityId) return null;
+
+  if ('waitlisted' in item) {
+    return item as unknown as InterestResult;
+  }
+
+  return {
+    status: 'interesado',
+    waitlisted: false,
+    youngId: item.youngId as string,
+    opportunityId: item.opportunityId as string,
+    score: (item.score as number) ?? 0,
+    slotsAvailable: (item.slotsAvailable as number) ?? 0,
+    matchId: item.id as string | undefined,
+    createdAt: (item.createdAt as string) ?? new Date().toISOString(),
+  };
 }
 
 function createId(): string {
@@ -62,8 +88,15 @@ function filterOpportunities(query: OpportunitiesQuery, items: Opportunity[]): O
     if (query.type && item.kind !== query.type) return false;
     if (query.interest && !item.interests.includes(query.interest)) return false;
     if (query.barrio && item.barrio !== query.barrio) return false;
+    if (query.modalidad && item.modalidad !== query.modalidad) return false;
     return true;
   });
+}
+
+function waitlistForOpportunity(opportunityId: string): InterestResult[] {
+  return getInterests()
+    .filter((i) => i.opportunityId === opportunityId && i.status === 'en-espera')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export const mockClient = {
@@ -89,23 +122,20 @@ export const mockClient = {
       const items = filterOpportunities(query, getOpportunities());
       return delay({ items, total: items.length });
     },
-    async expressInterest(id: string, body: ExpressInterestRequest): Promise<MatchResponse> {
+    async expressInterest(id: string, body: ExpressInterestRequest): Promise<InterestResult> {
       const opportunities = getOpportunities();
       const opportunity = opportunities.find((o) => o.id === id);
-      if (!opportunity || opportunity.slotsAvailable <= 0) {
-        throw new Error('Sin cupos disponibles');
+      if (!opportunity) {
+        throw new Error('Oportunidad no encontrada');
       }
 
-      const matches = getMatches();
-      if (matches.some((m) => m.youngId === body.youngId && m.opportunityId === id)) {
-        throw new Error('Interes ya registrado');
-      }
-
-      const slotsAvailable = opportunity.slotsAvailable - 1;
-      const nextOpportunities = opportunities.map((o) =>
-        o.id === id ? { ...o, slotsAvailable } : o,
+      const interests = getInterests();
+      const existing = interests.find(
+        (i) => i.youngId === body.youngId && i.opportunityId === id,
       );
-      saveOpportunities(nextOpportunities);
+      if (existing) {
+        throw new Error('Ya registraste interés en esta oportunidad');
+      }
 
       const profileStub: YoungProfileResponse = {
         id: body.youngId,
@@ -118,19 +148,61 @@ export const mockClient = {
         interests: opportunity.interests,
         createdAt: new Date().toISOString(),
       };
+      const score = computeMatchScore(opportunity, profileStub);
 
-      const match: MatchResponse = {
-        id: createId(),
+      if (opportunity.slotsAvailable <= 0) {
+        const queue = waitlistForOpportunity(id);
+        const position = queue.length + 1;
+        const result: InterestResult = {
+          status: 'en-espera',
+          waitlisted: true,
+          youngId: body.youngId,
+          opportunityId: id,
+          score,
+          slotsAvailable: 0,
+          waitlistId: createId(),
+          waitlistPosition: position,
+          createdAt: new Date().toISOString(),
+        };
+        saveInterests([...interests, result]);
+        return delay(result);
+      }
+
+      const slotsAvailable = opportunity.slotsAvailable - 1;
+      const nextOpportunities = opportunities.map((o) =>
+        o.id === id ? { ...o, slotsAvailable } : o,
+      );
+      saveOpportunities(nextOpportunities);
+
+      const result: InterestResult = {
+        status: 'interesado',
+        waitlisted: false,
         youngId: body.youngId,
         opportunityId: id,
-        status: 'interesado',
-        score: computeMatchScore(opportunity, profileStub),
+        score,
         slotsAvailable,
+        matchId: createId(),
         createdAt: new Date().toISOString(),
       };
 
-      saveMatches([...matches, match]);
-      return delay(match);
+      saveInterests([...interests, result]);
+      return delay(result);
+    },
+    async getWaitlist(id: string): Promise<WaitlistResponse> {
+      const opportunity = getOpportunities().find((o) => o.id === id);
+      if (!opportunity) {
+        throw new Error('Oportunidad no encontrada');
+      }
+
+      const items: WaitlistItem[] = waitlistForOpportunity(id).map((entry, index) => ({
+        id: entry.waitlistId ?? createId(),
+        youngId: entry.youngId,
+        youngName: `Joven ${entry.youngId.slice(0, 8)}`,
+        position: entry.waitlistPosition ?? index + 1,
+        createdAt: entry.createdAt,
+      }));
+
+      return delay({ opportunityId: id, items, total: items.length });
     },
     async getRoute(opportunityId: string, youngId: string): Promise<GrowthRouteResponse> {
       const opportunity = getOpportunities().find((o) => o.id === opportunityId);

@@ -3,17 +3,17 @@ import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-const MAX_PDF_BYTES = 5 * 1024 * 1024;
+const MAX_CV_BYTES = 5 * 1024 * 1024;
 
-export async function extractTextFromPdf(file: File): Promise<string> {
-  if (file.type !== 'application/pdf') {
-    throw new Error('Solo se aceptan archivos PDF.');
-  }
+function isPdfFile(file: File): boolean {
+  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+}
 
-  if (file.size > MAX_PDF_BYTES) {
-    throw new Error('El PDF no puede superar 5 MB.');
-  }
+function isTxtFile(file: File): boolean {
+  return file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt');
+}
 
+async function readPdfText(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   const pdf = await getDocument({ data: buffer }).promise;
 
@@ -35,4 +35,28 @@ export async function extractTextFromPdf(file: File): Promise<string> {
   }
 
   return text;
+}
+
+async function readTxtText(file: File): Promise<string> {
+  const text = (await file.text()).trim();
+  if (!text) {
+    throw new Error('El archivo de texto está vacío.');
+  }
+  return text;
+}
+
+export async function extractTextFromCvFile(file: File): Promise<string> {
+  if (file.size > MAX_CV_BYTES) {
+    throw new Error('El archivo no puede superar 5 MB.');
+  }
+
+  if (isTxtFile(file)) {
+    return readTxtText(file);
+  }
+
+  if (isPdfFile(file)) {
+    return readPdfText(file);
+  }
+
+  throw new Error('Solo se aceptan archivos PDF o TXT.');
 }

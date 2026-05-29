@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { DemandChart } from './DemandChart';
 import { DemandMap } from './DemandMap';
 import { GapCounter } from './GapCounter';
+import { WaitlistPanel } from './WaitlistPanel';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) return error.message;
@@ -82,6 +83,7 @@ export function DemandDashboard() {
       {!isLoading && !error && data && (
         <>
           <GapCounter gaps={data.gaps} />
+          <WaitlistPanel />
           <div className="grid gap-6 lg:grid-cols-2">
             <DemandMap zones={data.byZone} />
             <DemandChart interests={data.topInterests} />

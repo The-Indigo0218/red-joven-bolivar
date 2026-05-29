@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import type { OpportunityKind } from '../../types';
+import type { OpportunityKind, OpportunityModality } from '../../types';
 import { useApp } from '../../hooks/useApp';
 import { filterOpportunities } from '../../utils/filterOpportunities';
+import { modalityLabel } from '../../utils/modalityLabels';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { OpportunityCard } from './OpportunityCard';
@@ -17,6 +18,13 @@ const TABS: Tab[] = [
   { kind: 'estudio', label: 'Estudios' },
 ];
 
+const MODALITY_FILTERS: Array<{ value: OpportunityModality | 'todos'; label: string }> = [
+  { value: 'todos', label: 'Todas' },
+  { value: 'presencial', label: 'Presencial' },
+  { value: 'virtual', label: 'Virtual' },
+  { value: 'hibrido', label: 'Híbrido' },
+];
+
 interface OpportunitiesFeedProps {
   onGoToProfile?: () => void;
   onViewRoute?: (opportunityId: string) => void;
@@ -28,34 +36,46 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
     opportunities,
     expressInterest,
     isInterestedIn,
+    isWaitlisted,
+    getWaitlistPosition,
     isLoadingOpportunities,
     opportunitiesError,
     interestLoadingId,
     refreshOpportunities,
   } = useApp();
   const [activeTab, setActiveTab] = useState<OpportunityKind>('empleo');
+  const [modalidadFilter, setModalidadFilter] = useState<OpportunityModality | 'todos'>('todos');
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  const items = filterOpportunities(opportunities, activeTab, profile);
+  const items = filterOpportunities(
+    opportunities,
+    activeTab,
+    profile,
+    modalidadFilter === 'todos' ? undefined : modalidadFilter,
+  );
 
   async function handleInterest(id: string) {
     if (!profile) {
-      setFeedback('Completa tu perfil primero para expresar interes.');
+      setFeedback('Completa tu perfil primero para expresar interés.');
       return;
     }
 
     try {
-      const match = await expressInterest(id);
-      if (match) {
-        setFeedback('Interes registrado! Tu senal de demanda quedo guardada.');
+      const result = await expressInterest(id);
+      if (result?.status === 'interesado') {
+        setFeedback('Interés registrado. Tu señal de demanda quedó guardada.');
+      } else if (result?.status === 'en-espera') {
+        setFeedback(
+          `Te anotamos en la lista de espera${result.waitlistPosition ? ` — posición #${result.waitlistPosition}` : ''}.`,
+        );
       } else if (isInterestedIn(id)) {
-        setFeedback('Ya registraste interes en esta oportunidad.');
-      } else {
-        setFeedback('No hay cupos disponibles en esta oportunidad.');
+        setFeedback('Ya registraste interés en esta oportunidad.');
+      } else if (isWaitlisted(id)) {
+        setFeedback('Ya estás en la lista de espera de esta oportunidad.');
       }
     } catch (err) {
       setFeedback(
-        err instanceof Error ? err.message : 'No pudimos registrar tu interes. Intenta de nuevo.',
+        err instanceof Error ? err.message : 'No pudimos registrar tu interés. Intenta de nuevo.',
       );
     }
 
@@ -69,7 +89,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
       {profile ? (
         <p className="mb-6 text-sm" style={{ color: 'var(--rjb-text-muted)' }}>
           Filtradas para <strong>{profile.name}</strong> en{' '}
-          <strong>{profile.barrio}</strong> segun tus intereses.
+          <strong>{profile.barrio}</strong> según tus intereses.
         </p>
       ) : (
         <div
@@ -80,7 +100,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
           }}
         >
           <p className="mb-2">
-            Todavia no tenes perfil. Completalo para ver oportunidades personalizadas.
+            Todavía no tenés perfil. Completalo para ver oportunidades personalizadas.
           </p>
           {onGoToProfile && (
             <button
@@ -104,7 +124,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
         {TABS.map((tab) => {
           const active = tab.kind === activeTab;
           return (
@@ -124,6 +144,27 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
         })}
       </div>
 
+      <div className="flex flex-wrap gap-2 mb-6">
+        {MODALITY_FILTERS.map((filter) => {
+          const active = filter.value === modalidadFilter;
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setModalidadFilter(filter.value)}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold border"
+              style={{
+                borderColor: active ? 'var(--rjb-primary)' : 'var(--rjb-border)',
+                backgroundColor: active ? 'var(--rjb-primary)' : 'transparent',
+                color: active ? 'var(--rjb-bg)' : 'var(--rjb-text-muted)',
+              }}
+            >
+              {filter.label === 'Todas' ? filter.label : modalityLabel(filter.value as OpportunityModality)}
+            </button>
+          );
+        })}
+      </div>
+
       {isLoadingOpportunities && <LoadingSpinner label="Cargando oportunidades..." />}
 
       {!isLoadingOpportunities && opportunitiesError && (
@@ -132,7 +173,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
 
       {!isLoadingOpportunities && !opportunitiesError && !profile && (
         <EmptyState
-          title="Sin perfil todavia"
+          title="Sin perfil todavía"
           description="Crea tu perfil para filtrar oportunidades por barrio e intereses."
         />
       )}
@@ -140,7 +181,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
       {!isLoadingOpportunities && !opportunitiesError && profile && items.length === 0 && (
         <EmptyState
           title="No hay oportunidades que coincidan"
-          description={`No encontramos ${TABS.find((t) => t.kind === activeTab)?.label.toLowerCase()} en ${profile.barrio} que coincidan con tus intereses. Proba otra pestana o actualiza tu perfil.`}
+          description={`No encontramos ${TABS.find((t) => t.kind === activeTab)?.label.toLowerCase()} en ${profile.barrio} que coincidan con tus intereses${modalidadFilter !== 'todos' ? ` y modalidad ${modalityLabel(modalidadFilter)}` : ''}. Probá otra pestaña o actualizá tu perfil.`}
         />
       )}
 
@@ -151,7 +192,9 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
               key={opp.id}
               opportunity={opp}
               interested={isInterestedIn(opp.id)}
-              disabled={!profile || opp.slotsAvailable <= 0}
+              waitlisted={isWaitlisted(opp.id)}
+              waitlistPosition={getWaitlistPosition(opp.id)}
+              disabled={!profile}
               loading={interestLoadingId === opp.id}
               onInterest={(id) => void handleInterest(id)}
               onViewRoute={onViewRoute}

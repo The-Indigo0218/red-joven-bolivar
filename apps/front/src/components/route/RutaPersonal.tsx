@@ -13,11 +13,20 @@ interface RutaPersonalProps {
 }
 
 export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPersonalProps) {
-  const { profile, opportunities } = useApp();
+  const {
+    profile,
+    opportunities,
+    expressInterest,
+    isInterestedIn,
+    isWaitlisted,
+    getWaitlistPosition,
+    interestLoadingId,
+  } = useApp();
   const [route, setRoute] = useState<GrowthRouteResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [closingFeedback, setClosingFeedback] = useState<string | null>(null);
 
   const targetOpp = opportunities.find((o) => o.id === opportunityId);
 
@@ -57,6 +66,27 @@ export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPers
   function handleStartRoute() {
     setStarted(true);
     onRouteStarted?.();
+  }
+
+  async function handleClosingInterest(closingOppId: string) {
+    if (!profile) return;
+
+    try {
+      const result = await expressInterest(closingOppId);
+      if (result?.status === 'en-espera') {
+        setClosingFeedback(
+          `Te anotamos en la lista de espera${result.waitlistPosition ? ` — posición #${result.waitlistPosition}` : ''}.`,
+        );
+      } else if (result?.status === 'interesado') {
+        setClosingFeedback('Interés registrado en el curso de cierre.');
+      }
+    } catch (err) {
+      setClosingFeedback(
+        err instanceof ApiRequestError ? err.message : 'No pudimos registrar tu interés.',
+      );
+    }
+
+    window.setTimeout(() => setClosingFeedback(null), 4000);
   }
 
   if (!profile) {
@@ -150,28 +180,71 @@ export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPers
               <p className="text-sm mb-4" style={{ color: 'var(--rjb-text-muted)' }}>
                 Cursos y talleres en Cartagena para cerrar tu brecha, gratis o con cupo disponible.
               </p>
+              {closingFeedback && (
+                <p
+                  className="text-sm mb-3 rounded-lg px-4 py-2"
+                  style={{ backgroundColor: 'var(--rjb-surface-2)', color: 'var(--rjb-accent)' }}
+                >
+                  {closingFeedback}
+                </p>
+              )}
               <div className="grid gap-3">
-                {route.closingOpportunities.map((item) => (
-                  <article
-                    key={`${item.skill.id}-${item.opportunity.id}`}
-                    className="rounded-xl p-4 border"
-                    style={{
-                      backgroundColor: 'var(--rjb-surface)',
-                      borderColor: 'var(--rjb-border)',
-                    }}
-                  >
-                    <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--rjb-warning)' }}>
-                      Falta: {item.skill.label}
-                    </p>
-                    <h3 className="font-bold">{item.opportunity.title}</h3>
-                    <p className="text-sm" style={{ color: 'var(--rjb-accent)' }}>
-                      {item.opportunity.organization} · {item.opportunity.barrio}
-                    </p>
-                    <p className="text-sm mt-2" style={{ color: 'var(--rjb-success)' }}>
-                      {item.slotsAvailable} cupos disponibles
-                    </p>
-                  </article>
-                ))}
+                {route.closingOpportunities.map((item) => {
+                  const oppId = item.opportunity.id;
+                  const interested = isInterestedIn(oppId);
+                  const waitlisted = isWaitlisted(oppId);
+                  const position = getWaitlistPosition(oppId);
+                  const loadingInterest = interestLoadingId === oppId;
+
+                  return (
+                    <article
+                      key={`${item.skill.id}-${item.opportunity.id}`}
+                      className="rounded-xl p-4 border"
+                      style={{
+                        backgroundColor: 'var(--rjb-surface)',
+                        borderColor: 'var(--rjb-border)',
+                      }}
+                    >
+                      <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--rjb-warning)' }}>
+                        Falta: {item.skill.label}
+                      </p>
+                      <h3 className="font-bold">{item.opportunity.title}</h3>
+                      <p className="text-sm" style={{ color: 'var(--rjb-accent)' }}>
+                        {item.opportunity.organization} · {item.opportunity.barrio}
+                      </p>
+                      <p
+                        className="text-sm mt-2"
+                        style={{
+                          color: item.isFull ? 'var(--rjb-warning)' : 'var(--rjb-success)',
+                        }}
+                      >
+                        {item.isFull
+                          ? 'Curso lleno — podés unirte a la lista de espera'
+                          : `${item.slotsAvailable} cupos disponibles`}
+                      </p>
+                      {item.isFull && (
+                        <button
+                          type="button"
+                          onClick={() => void handleClosingInterest(oppId)}
+                          disabled={interested || waitlisted || loadingInterest}
+                          className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                          style={{
+                            backgroundColor: interested || waitlisted ? 'var(--rjb-success)' : 'var(--rjb-primary)',
+                            color: 'var(--rjb-bg)',
+                          }}
+                        >
+                          {loadingInterest
+                            ? 'Enviando...'
+                            : interested
+                              ? 'Interés registrado'
+                              : waitlisted
+                                ? `En lista de espera${position ? ` — #${position}` : ''}`
+                                : 'Unirme a la lista de espera'}
+                        </button>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             </div>
           )}

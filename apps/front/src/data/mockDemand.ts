@@ -38,8 +38,9 @@ export const mockGaps: DemandGap[] = [
     youngCount: 200,
     slotsOffered: 30,
     gap: 170,
+    waitlistCount: 45,
     headline:
-      '200 jóvenes quieren estudiar sistemas en Cartagena — solo 30 cupos disponibles en el SENA',
+      '200 jóvenes quieren estudiar sistemas en Cartagena — solo 30 cupos y 45 en lista de espera',
   },
   {
     interest: 'emprendimiento',
@@ -47,8 +48,9 @@ export const mockGaps: DemandGap[] = [
     youngCount: 130,
     slotsOffered: 40,
     gap: 90,
+    waitlistCount: 22,
     headline:
-      '130 jóvenes buscan inglés técnico para turismo — solo 40 cupos disponibles en el SENA',
+      '130 jóvenes buscan inglés técnico para turismo — solo 40 cupos y 22 en lista de espera',
   },
   {
     interest: 'emprendimiento',
@@ -56,8 +58,9 @@ export const mockGaps: DemandGap[] = [
     youngCount: 180,
     slotsOffered: 25,
     gap: 155,
+    waitlistCount: 38,
     headline:
-      '180 jóvenes quieren formación en emprendimiento juvenil — solo 25 cupos disponibles',
+      '180 jóvenes quieren formación en emprendimiento juvenil — solo 25 cupos y 38 en lista de espera',
   },
 ];
 
