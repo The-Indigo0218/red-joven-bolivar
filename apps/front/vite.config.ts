@@ -9,6 +9,8 @@ export default defineConfig({
       '/young': { target: 'http://localhost:3000', changeOrigin: true },
       '/opportunities': { target: 'http://localhost:3000', changeOrigin: true },
       '/demand': { target: 'http://localhost:3000', changeOrigin: true },
+      '/civiccoins': { target: 'http://localhost:3000', changeOrigin: true },
+      '/redemptions': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
 })

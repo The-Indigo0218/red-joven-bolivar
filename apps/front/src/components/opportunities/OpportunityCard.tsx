@@ -6,6 +6,8 @@ interface OpportunityCardProps {
   disabled?: boolean;
   loading?: boolean;
   onInterest?: (id: string) => void;
+  onViewRoute?: (id: string) => void;
+  showRoute?: boolean;
 }
 
 export function OpportunityCard({
@@ -14,6 +16,8 @@ export function OpportunityCard({
   disabled = false,
   loading = false,
   onInterest,
+  onViewRoute,
+  showRoute = false,
 }: OpportunityCardProps) {
   const { id, title, organization, requirements, slotsAvailable, slotsTotal, barrio } =
     opportunity;
@@ -55,24 +59,40 @@ export function OpportunityCard({
         >
           {slotsAvailable} / {slotsTotal} cupos
         </span>
-        <button
-          type="button"
-          onClick={() => onInterest?.(id)}
-          disabled={isDisabled}
-          className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: interested ? 'var(--rjb-success)' : 'var(--rjb-primary)',
-            color: 'var(--rjb-bg)',
-          }}
-        >
-          {loading
-            ? 'Enviando...'
-            : interested
-              ? 'Interes registrado'
-              : noSlots
-                ? 'Sin cupos'
-                : 'Me interesa'}
-        </button>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          {showRoute && onViewRoute && (
+            <button
+              type="button"
+              onClick={() => onViewRoute(id)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold border"
+              style={{
+                borderColor: 'var(--rjb-accent)',
+                color: 'var(--rjb-accent)',
+                backgroundColor: 'transparent',
+              }}
+            >
+              Ver mi ruta
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onInterest?.(id)}
+            disabled={isDisabled}
+            className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: interested ? 'var(--rjb-success)' : 'var(--rjb-primary)',
+              color: 'var(--rjb-bg)',
+            }}
+          >
+            {loading
+              ? 'Enviando...'
+              : interested
+                ? 'Interes registrado'
+                : noSlots
+                  ? 'Sin cupos'
+                  : 'Me interesa'}
+          </button>
+        </div>
       </footer>
     </article>
   );

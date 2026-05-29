@@ -1,4 +1,4 @@
-export type View = 'onboarding' | 'feed' | 'dashboard';
+export type View = 'onboarding' | 'feed' | 'route' | 'dashboard' | 'civiccoins';
 
 interface NavItem {
   view: View;
@@ -8,6 +8,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { view: 'onboarding', label: 'Mi perfil' },
   { view: 'feed', label: 'Oportunidades' },
+  { view: 'civiccoins', label: 'CivicCoins' },
   { view: 'dashboard', label: 'Demanda' },
 ];
 

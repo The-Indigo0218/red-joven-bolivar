@@ -1,0 +1,40 @@
+CURRÍCULUM VITAE
+
+Nombre: Aaron Hernández
+Edad: 22 años
+Ciudad: Cartagena de Indias, Bolívar
+Barrio: Chiquinquirá
+Correo: aaron.hernandez.demo@correo.com
+Teléfono: +57 300 111 2233
+
+PERFIL PROFESIONAL
+Joven apasionado por la tecnología y el desarrollo de software. Busco oportunidades de empleo o estudio en el sector TI en Cartagena. Tengo experiencia práctica en soporte técnico y proyectos escolares de programación.
+
+FORMACIÓN
+- Bachillerato técnico en informática — I.E. Tecnológica de Cartagena (2020–2022)
+- Curso corto SENA: fundamentos de desarrollo web (2023)
+
+HABILIDADES TÉCNICAS
+- Lógica de programación: algoritmos, pseudocódigo y resolución de problemas en Python y JavaScript.
+- Bases de datos: consultas SQL, modelado básico y uso de PostgreSQL en proyectos académicos.
+- Redes y conectividad: configuración de routers, diagnóstico de conectividad y soporte de red en LAN.
+- Excel avanzado: tablas dinámicas, fórmulas complejas y reportes para seguimiento de inventarios.
+- Inglés técnico: lectura de documentación de APIs y manuales de equipos de red.
+
+HABILIDADES BLANDAS
+- Comunicación clara con usuarios y compañeros de equipo.
+- Atención al cliente en mesa de ayuda del colegio y feria de emprendimiento juvenil.
+
+EXPERIENCIA
+- Practicante de soporte TI — Biblioteca comunitaria Chiquinquirá (2024)
+  * Resolví incidencias de conectividad y mantenimiento de equipos.
+  * Elaboré reportes semanales en Excel avanzado para el coordinador.
+
+- Voluntario — Jornada de reciclaje barrial (2023)
+  * Apoyo en logística y registro de participantes.
+
+OBJETIVO
+Conseguir un empleo o curso técnico en tecnología en Cartagena que me permita seguir creciendo en Lógica de programación y Bases de datos.
+
+REFERENCIAS
+Disponibles a solicitud.
