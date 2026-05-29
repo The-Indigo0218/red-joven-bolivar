@@ -138,7 +138,7 @@ export class CivicCoinsService {
     const youngSkills = await this.skillsService.getYoungSkills(youngId);
     const activities = (await this.activityService.findAll()).items;
 
-    const scores = this.aiService.suggestSocialActivities(
+    const scores = await this.aiService.suggestSocialActivities(
       { barrio: profile.barrio, skillIds: youngSkills.map((s) => s.id) },
       activities,
     );

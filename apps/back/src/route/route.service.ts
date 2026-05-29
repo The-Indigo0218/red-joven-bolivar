@@ -67,7 +67,7 @@ export class RouteService {
     );
 
     // MCP_HOOK: ROUTE_GENERATION
-    const { affinityScore, headline } = this.aiService.generateGrowthRoute({
+    const { affinityScore, headline } = await this.aiService.generateGrowthRoute({
       targetTitle: target.title,
       matchingSkills,
       missingSkills,

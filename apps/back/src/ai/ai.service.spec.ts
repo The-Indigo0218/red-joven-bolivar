@@ -4,6 +4,10 @@ import { Skill } from '../skills/skill.entity';
 import type { SocialActivity } from '../social-activity/social-activity.entity';
 import { YoungProfile } from '../young/young.entity';
 import { AiService } from './ai.service';
+import type { GeminiService } from './gemini.service';
+
+// Gemini deshabilitado: los hooks ejercitan el camino heurístico determinista.
+const geminiDisabled = { isEnabled: () => false } as unknown as GeminiService;
 
 function skill(id: string, label: string): Skill {
   return {
@@ -38,6 +42,7 @@ describe('AiService (métodos puros)', () => {
       {} as Repository<YoungProfile>,
       {} as Repository<Opportunity>,
       {} as Repository<Skill>,
+      geminiDisabled,
     );
   });
 
@@ -71,8 +76,8 @@ describe('AiService (métodos puros)', () => {
   });
 
   describe('generateGrowthRoute', () => {
-    it('devuelve score 100 y titular de postulación sin brecha', () => {
-      const result = aiService.generateGrowthRoute({
+    it('devuelve score 100 y titular de postulación sin brecha', async () => {
+      const result = await aiService.generateGrowthRoute({
         targetTitle: 'Dev junior',
         matchingSkills: [skill('s1', 'Git')],
         missingSkills: [],
@@ -85,8 +90,8 @@ describe('AiService (métodos puros)', () => {
       );
     });
 
-    it('calcula score por cobertura y titular con curso de cierre', () => {
-      const result = aiService.generateGrowthRoute({
+    it('calcula score por cobertura y titular con curso de cierre', async () => {
+      const result = await aiService.generateGrowthRoute({
         targetTitle: 'Analista de datos',
         matchingSkills: [skill('s1', 'Excel')],
         missingSkills: [skill('s2', 'Python'), skill('s3', 'SQL')],
@@ -106,8 +111,8 @@ describe('AiService (métodos puros)', () => {
       );
     });
 
-    it('avisa cuando no hay curso de cierre disponible', () => {
-      const result = aiService.generateGrowthRoute({
+    it('avisa cuando no hay curso de cierre disponible', async () => {
+      const result = await aiService.generateGrowthRoute({
         targetTitle: 'Diseñador UX',
         matchingSkills: [],
         missingSkills: [skill('s1', 'Figma')],
@@ -122,14 +127,14 @@ describe('AiService (métodos puros)', () => {
   });
 
   describe('suggestSocialActivities', () => {
-    it('ordena por afinidad descendente', () => {
+    it('ordena por afinidad descendente', async () => {
       const activities = [
         activity('low', 'Bocagrande', ['s1', 's2']),
         activity('high', 'Manga', ['s1']),
         activity('mid', 'Manga', ['s1', 's2', 's3']),
       ];
 
-      const result = aiService.suggestSocialActivities(
+      const result = await aiService.suggestSocialActivities(
         { barrio: 'Manga', skillIds: ['s1', 's2'] },
         activities,
       );
@@ -140,8 +145,8 @@ describe('AiService (métodos puros)', () => {
       expect(result[2]!.affinityScore).toBe(60);
     });
 
-    it('asigna cobertura 0.5 cuando la actividad no exige habilidades', () => {
-      const result = aiService.suggestSocialActivities(
+    it('asigna cobertura 0.5 cuando la actividad no exige habilidades', async () => {
+      const result = await aiService.suggestSocialActivities(
         { barrio: 'Manga', skillIds: ['s1'] },
         [activity('open', 'Manga', [])],
       );
@@ -150,12 +155,12 @@ describe('AiService (métodos puros)', () => {
       expect(result[0]).toEqual({ activityId: 'open', affinityScore: 70 });
     });
 
-    it('penaliza barrio distinto aunque cubra todas las habilidades', () => {
-      const sameBarrio = aiService.suggestSocialActivities(
+    it('penaliza barrio distinto aunque cubra todas las habilidades', async () => {
+      const sameBarrio = await aiService.suggestSocialActivities(
         { barrio: 'Manga', skillIds: ['s1'] },
         [activity('a1', 'Manga', ['s1'])],
       );
-      const otherBarrio = aiService.suggestSocialActivities(
+      const otherBarrio = await aiService.suggestSocialActivities(
         { barrio: 'Manga', skillIds: ['s1'] },
         [activity('a2', 'Bocagrande', ['s1'])],
       );
