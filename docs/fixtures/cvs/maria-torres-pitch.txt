@@ -1,0 +1,32 @@
+CURRÍCULUM VITAE
+
+Nombre: María Torres
+Edad: 19 años
+Ciudad: Cartagena de Indias, Bolívar
+Barrio: El Pozón
+Correo: maria.torres.demo@correo.com
+Teléfono: +57 300 555 0199
+
+PERFIL
+Joven de El Pozón con pasión por la tecnología. Busco mi primer empleo en soporte
+técnico o una formación en sistemas. Me gusta ayudar a resolver problemas de
+computadores y aprender en equipo.
+
+FORMACIÓN
+- Bachiller — I.E. El Pozón (2023)
+- Curso básico de informática comunitaria (2024)
+
+HABILIDADES
+- Lógica de programación: resolución de problemas, pseudocódigo y Python básico.
+- Excel avanzado: tablas dinámicas, fórmulas y reportes para control de inventario.
+- Comunicación clara con vecinos y compañeros de taller.
+- Atención al cliente en feria escolar de emprendimiento.
+
+EXPERIENCIA
+- Voluntaria — Punto digital comunitario El Pozón (2024)
+  * Apoyo a usuarios con office y navegación web.
+  * Registro de incidencias en Excel avanzado.
+
+OBJETIVO
+Conseguir empleo o formación en tecnología en Cartagena, especialmente en soporte
+técnico y redes.

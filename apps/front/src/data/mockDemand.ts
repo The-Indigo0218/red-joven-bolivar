@@ -34,6 +34,16 @@ export const mockInterestDemand: InterestDemand[] = [
 export const mockGaps: DemandGap[] = [
   {
     interest: 'tecnologia',
+    barrio: 'El Pozón',
+    youngCount: 52,
+    slotsOffered: 5,
+    gap: 47,
+    waitlistCount: 47,
+    headline:
+      '52 jóvenes quieren tecnología en El Pozón — solo 5 cupos y 47 en lista de espera',
+  },
+  {
+    interest: 'tecnologia',
     barrio: 'Chiquinquirá',
     youngCount: 200,
     slotsOffered: 30,

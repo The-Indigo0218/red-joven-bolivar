@@ -9,6 +9,7 @@ import { SKILL_CATALOG } from './skillCatalog';
 
 const MOCK_OPPORTUNITY_SKILL_SLUGS: Record<string, string[]> = {
   'Practicante de soporte técnico de redes': ['redes', 'logica-programacion'],
+  'Técnico laboral en Redes de Datos — SENA El Pozón': ['redes', 'logica-programacion'],
   'Auxiliar de recepción turística bilingüe': ['ingles-conversacional', 'atencion-cliente'],
   'Tecnólogo en Análisis y Desarrollo de Software': [
     'logica-programacion',
