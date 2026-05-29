@@ -24,11 +24,12 @@ export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPers
   useEffect(() => {
     if (!profile) return;
 
+    const youngId = profile.id;
     let cancelled = false;
 
     async function loadRoute() {
       try {
-        const data = await api.opportunities.getRoute(opportunityId, profile.id);
+        const data = await api.opportunities.getRoute(opportunityId, youngId);
         if (!cancelled) {
           setRoute(data);
           setError(null);

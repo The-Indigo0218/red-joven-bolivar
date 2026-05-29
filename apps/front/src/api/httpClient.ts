@@ -15,6 +15,8 @@ import type {
   RedemptionCatalogResponse,
   RedemptionResponse,
   SuggestedActivitiesResponse,
+  UploadCvRequest,
+  UploadCvResponse,
   YoungProfileResponse,
 } from '../types';
 
@@ -48,6 +50,9 @@ export const httpClient = {
   young: {
     createProfile(body: CreateYoungProfileRequest): Promise<YoungProfileResponse> {
       return request<YoungProfileResponse>('/young/profile', { method: 'POST', body: JSON.stringify(body) });
+    },
+    uploadCv(body: UploadCvRequest): Promise<UploadCvResponse> {
+      return request<UploadCvResponse>('/young/cv', { method: 'POST', body: JSON.stringify(body) });
     },
   },
   opportunities: {

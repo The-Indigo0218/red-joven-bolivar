@@ -189,7 +189,7 @@ export interface GroupsResponse {
   total: number;
 }
 
-// ───────────────────────── Skills / Growth Route ─────────────────────────
+// ───────────────────────── Skills / Growth Route / CV ─────────────────────────
 
 export type SkillCategory = 'tecnica' | 'blanda' | 'digital';
 
@@ -214,6 +214,16 @@ export interface GrowthRouteResponse {
   missingSkills: Skill[];
   closingOpportunities: ClosingOpportunity[];
   headline: string;
+}
+
+export interface UploadCvRequest {
+  cvText: string;
+  youngId?: string;
+}
+
+export interface UploadCvResponse {
+  skills: Skill[];
+  confidence: number;
 }
 
 // ───────────────────────── CivicCoins ─────────────────────────
