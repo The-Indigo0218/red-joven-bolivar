@@ -1,4 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import type { DemandForecast } from '../ai/ai.service';
 import type { InterestSlug } from '../young/young.entity';
 import {
   DemandService,
@@ -16,6 +17,16 @@ export interface DemandByInterestResponse {
   items: InterestDemand[];
   total: number;
 }
+
+export interface DemandForecastResponse {
+  barrio: string;
+  horizonMonths: number;
+  items: DemandForecast[];
+  total: number;
+}
+
+const DEFAULT_HORIZON_MONTHS = 6;
+const MAX_HORIZON_MONTHS = 36;
 
 @Controller('demand')
 export class DemandController {
@@ -43,5 +54,24 @@ export class DemandController {
   ): Promise<DemandByInterestResponse> {
     const items = await this.demandService.getByInterest(barrio);
     return { items, total: items.length };
+  }
+
+  // GET /demand/forecast?barrio=&horizon=   (MCP_HOOK: DEMAND_PREDICTION)
+  @Get('forecast')
+  async forecast(
+    @Query('barrio') barrio?: string,
+    @Query('horizon') horizon?: string,
+  ): Promise<DemandForecastResponse> {
+    if (!barrio) {
+      throw new BadRequestException('El parámetro "barrio" es requerido');
+    }
+    const parsed = horizon ? Number.parseInt(horizon, 10) : DEFAULT_HORIZON_MONTHS;
+    const horizonMonths =
+      Number.isInteger(parsed) && parsed > 0 && parsed <= MAX_HORIZON_MONTHS
+        ? parsed
+        : DEFAULT_HORIZON_MONTHS;
+
+    const items = await this.demandService.forecast(barrio, horizonMonths);
+    return { barrio, horizonMonths, items, total: items.length };
   }
 }

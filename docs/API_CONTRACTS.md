@@ -273,6 +273,99 @@ export interface GroupsResponse {
 
 ---
 
+## GET /barrios
+
+Catálogo de barrios de Cartagena (datos de referencia) para el selector del
+OnboardingProfile y como referencia geográfica del mapa. *(Añadido en Fase 3.)*
+
+```typescript
+export interface Barrio {
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+// Response 200
+export interface BarriosResponse {
+  items: Barrio[];
+  total: number;
+}
+```
+
+---
+
+# ENDPOINTS DE IA (Fase 4)
+
+Implementados detrás de los `// MCP_HOOK` del `AIModule`. Hoy responden con una
+heurística por reglas determinista; el punto de integración MCP/LLM se reemplaza
+sin tocar a los consumidores. El front **nunca** llama a la IA directo.
+
+## GET /opportunities/recommendations?youngId=
+
+Feed de oportunidades ordenado por afinidad para un joven. `// MCP_HOOK: AI_MATCHING`
+
+```typescript
+// Query param: youngId (uuid, requerido)
+
+export interface RecommendedOpportunity extends Opportunity {
+  score: number; // afinidad 0..1
+}
+
+// Response 200
+export interface RecommendationsResponse {
+  youngId: string;
+  items: RecommendedOpportunity[]; // ordenadas por score desc
+  total: number;
+}
+```
+
+## GET /demand/forecast?barrio=&horizon=
+
+Proyección de demanda por interés en un barrio. `// MCP_HOOK: DEMAND_PREDICTION`
+
+```typescript
+// Query params: barrio (requerido), horizon (meses, opcional; default 6, máx 36)
+
+export interface DemandForecast {
+  interest: InterestSlug;
+  barrio: string;
+  predictedYoungCount: number;
+  horizonMonths: number;
+}
+
+// Response 200
+export interface DemandForecastResponse {
+  barrio: string;
+  horizonMonths: number;
+  items: DemandForecast[];
+  total: number;
+}
+```
+
+## GET /groups/suggestions?barrio=&interest=
+
+Sugerencia de formación de grupo (candidatos por barrio + interés) antes de un
+`POST /groups`. Delegada a `suggestGroupFormation()`.
+
+```typescript
+// Query params: barrio (requerido), interest (InterestSlug, requerido)
+
+export interface GroupSuggestion {
+  barrio: string;
+  interest: InterestSlug;
+  suggestedName: string;
+  candidateYoungIds: string[]; // hasta 25
+}
+
+// Response 200
+export interface GroupSuggestionsResponse {
+  items: GroupSuggestion[];
+  total: number;
+}
+```
+
+---
+
 # DIFERENCIADOR 1 — Motor de Rutas de Crecimiento
 
 ```typescript

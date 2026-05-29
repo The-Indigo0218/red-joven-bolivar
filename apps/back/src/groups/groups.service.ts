@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AiService, type GroupSuggestion } from '../ai/ai.service';
 import type { InterestSlug } from '../young/young.entity';
 import { Group } from './group.entity';
 
@@ -31,13 +32,28 @@ export interface GroupsResponse {
   total: number;
 }
 
+export interface GroupSuggestionsResponse {
+  items: GroupSuggestion[];
+  total: number;
+}
+
 // Grupos sociales por barrio y habilidad (Mi Sangre).
 @Injectable()
 export class GroupsService {
   constructor(
     @InjectRepository(Group)
     private readonly groupRepo: Repository<Group>,
+    private readonly aiService: AiService,
   ) {}
+
+  // Sugerencia de formación de grupo antes de crearlo (delegada a IA).
+  async suggest(
+    barrio: string,
+    interest: InterestSlug,
+  ): Promise<GroupSuggestionsResponse> {
+    const items = await this.aiService.suggestGroupFormation(barrio, interest);
+    return { items, total: items.length };
+  }
 
   async create(input: CreateGroupInput): Promise<GroupResponse> {
     const group = await this.groupRepo.save(this.groupRepo.create(input));

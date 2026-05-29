@@ -23,6 +23,17 @@ export interface OpportunitiesResponse {
   total: number;
 }
 
+// Oportunidad con su afinidad para el joven (GET /opportunities/recommendations).
+export interface RecommendedOpportunity extends Opportunity {
+  score: number; // afinidad 0..1
+}
+
+export interface RecommendationsResponse {
+  youngId: string;
+  items: RecommendedOpportunity[];
+  total: number;
+}
+
 // Contrato POST /opportunities/:id/interest → MatchResponse.
 export interface MatchResult {
   id: string;
@@ -67,6 +78,26 @@ export class OpportunitiesService {
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total };
+  }
+
+  // Feed ordenado por afinidad para un joven (MCP_HOOK: AI_MATCHING vía
+  // MatchingService → AiService).
+  async getRecommendations(youngId: string): Promise<RecommendationsResponse> {
+    // Valida que el joven exista (lanza NotFound si no).
+    await this.youngService.findOne(youngId);
+
+    const opportunities = await this.opportunityRepo.find();
+    const scores = await this.matchingService.scoreOpportunities(
+      youngId,
+      opportunities.map((o) => o.id),
+    );
+    const scoreById = new Map(scores.map((s) => [s.opportunityId, s.score]));
+
+    const items: RecommendedOpportunity[] = opportunities
+      .map((opp) => ({ ...opp, score: scoreById.get(opp.id) ?? 0 }))
+      .sort((a, b) => b.score - a.score);
+
+    return { youngId, items, total: items.length };
   }
 
   async expressInterest(id: string, youngId: string): Promise<MatchResult> {
