@@ -25,6 +25,8 @@ export type InterestSlug =
 
 export type OpportunityKind = 'empleo' | 'voluntariado' | 'estudio';
 
+export type OpportunityModality = 'presencial' | 'virtual' | 'hibrido';
+
 export type SeekingType = OpportunityKind | 'todos';
 
 export type EducationLevel =
@@ -86,7 +88,7 @@ export interface YoungProfileResponse {
 
 ---
 
-## GET /opportunities?type=&interest=&barrio=
+## GET /opportunities?type=&interest=&barrio=&modalidad=
 
 Feed de oportunidades, filtrable. Todos los query params son opcionales.
 
@@ -96,6 +98,7 @@ export interface OpportunitiesQuery {
   type?: OpportunityKind;       // tab seleccionado
   interest?: InterestSlug;
   barrio?: string;
+  modalidad?: OpportunityModality;  // presencial | virtual | hibrido
 }
 
 // Elemento del feed
@@ -108,6 +111,7 @@ export interface Opportunity {
   slotsTotal: number;
   slotsAvailable: number;
   barrio: string;
+  modalidad: OpportunityModality;   // presencial por defecto
   interests: InterestSlug[];
 }
 
@@ -133,6 +137,7 @@ export interface CreateOpportunityRequest {
   requirements: string[];         // @IsArray @IsString({ each: true })
   slotsTotal: number;             // @IsInt @Min(1)
   barrio: string;
+  modalidad: OpportunityModality; // @IsIn(['presencial', 'virtual', 'hibrido'])
   interests: InterestSlug[];      // @IsIn(INTEREST_SLUGS, { each: true })
 }
 
@@ -144,8 +149,14 @@ export interface CreateOpportunityResponse extends Opportunity {}
 
 ## POST /opportunities/:id/interest
 
-Registra el "Me interesa" del joven sobre una oportunidad. Crea un `match` y
-alimenta la demanda.
+Registra el "Me interesa" del joven sobre una oportunidad.
+
+- **Con cupo:** crea un `match` (`status: 'interesado'`), descuenta un cupo y
+  devuelve `waitlisted: false`.
+- **Sin cupo:** en vez de rechazar, anota al joven en la **lista de espera**
+  (`status: 'en-espera'`, `waitlisted: true`) con su `waitlistPosition`. Así la
+  intención no se pierde y alimenta la señal de demanda insatisfecha que ve el
+  SENA.
 
 ```typescript
 // Path param: id (uuid de la oportunidad)
@@ -156,15 +167,47 @@ export interface ExpressInterestRequest {
 }
 
 // Response 201
-export interface MatchResponse {
-  id: string;
+export interface InterestResult {
+  status: 'interesado' | 'en-espera';
+  waitlisted: boolean;
   youngId: string;
   opportunityId: string;
-  status: MatchStatus;          // arranca en 'interesado'
   score: number;                // afinidad 0..1 (reglas hoy, IA mañana)
-  slotsAvailable: number;       // cupos restantes tras la expresión de interés
+  slotsAvailable: number;       // cupos restantes (0 si quedó en espera)
+  matchId?: string;             // presente cuando status === 'interesado'
+  waitlistId?: string;          // presente cuando status === 'en-espera'
+  waitlistPosition?: number;    // posición en la cola (1 = primero)
   createdAt: string;
 }
+// 404 si la oportunidad o el joven no existen
+// 409 si el joven ya tenía match en esta oportunidad (con cupo)
+```
+
+---
+
+## GET /opportunities/:id/waitlist
+
+Lista de espera de una oportunidad, ordenada por antigüedad. Es la demanda real
+insatisfecha que el SENA usa para decidir si abrir nuevos cupos o cursos.
+
+```typescript
+// Path param: id (uuid de la oportunidad)
+
+export interface WaitlistItem {
+  id: string;
+  youngId: string;
+  youngName: string;
+  position: number;             // 1 = primero en la fila
+  createdAt: string;
+}
+
+// Response 200
+export interface WaitlistResponse {
+  opportunityId: string;
+  items: WaitlistItem[];
+  total: number;
+}
+// 404 si la oportunidad no existe
 ```
 
 ---
@@ -205,7 +248,8 @@ export interface DemandGap {
   youngCount: number;     // jóvenes que lo quieren
   slotsOffered: number;   // cupos disponibles
   gap: number;            // youngCount - slotsOffered
-  headline: string;       // "200 jóvenes quieren estudiar sistemas — solo 30 cupos en el SENA"
+  waitlistCount: number;  // jóvenes en lista de espera (demanda insatisfecha real)
+  headline: string;       // "200 jóvenes quieren estudiar sistemas — solo 30 cupos y 45 en lista de espera"
 }
 ```
 
@@ -461,7 +505,9 @@ export interface ClosingOpportunity {
   skill: Skill;
   opportunity: Opportunity;
   slotsAvailable: number;
+  isFull: boolean;        // true: el curso existe pero sin cupos → invita a lista de espera
 }
+// Los cursos con cupo aparecen primero; los llenos quedan como alternativa.
 
 // Response 200
 export interface GrowthRouteResponse {

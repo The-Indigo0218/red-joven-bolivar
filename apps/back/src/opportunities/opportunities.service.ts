@@ -4,17 +4,23 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { MatchingService } from '../matching/matching.service';
 import { YoungService } from '../young/young.service';
-import type { InterestSlug, OpportunityKind } from '../young/young.entity';
+import {
+  YoungProfile,
+  type InterestSlug,
+  type OpportunityKind,
+} from '../young/young.entity';
 import { Match } from './match.entity';
-import { Opportunity } from './opportunity.entity';
+import { Opportunity, type OpportunityModality } from './opportunity.entity';
+import { WaitlistEntry } from './waitlist-entry.entity';
 
 export interface OpportunitiesQuery {
   type?: OpportunityKind;
   interest?: InterestSlug;
   barrio?: string;
+  modalidad?: OpportunityModality;
 }
 
 export interface CreateOpportunityInput {
@@ -24,6 +30,7 @@ export interface CreateOpportunityInput {
   requirements: string[];
   slotsTotal: number;
   barrio: string;
+  modalidad: OpportunityModality;
   interests: InterestSlug[];
 }
 
@@ -44,15 +51,39 @@ export interface RecommendationsResponse {
   total: number;
 }
 
-// Contrato POST /opportunities/:id/interest → MatchResponse.
-export interface MatchResult {
-  id: string;
+// Contrato POST /opportunities/:id/interest.
+// Si hay cupo, el joven queda 'interesado' (se crea un Match y se descuenta un
+// cupo). Si no hay cupo, queda 'en-espera' (se registra en la lista de espera y
+// no se pierde la señal de demanda).
+export interface InterestResult {
+  status: 'interesado' | 'en-espera';
+  waitlisted: boolean;
   youngId: string;
   opportunityId: string;
-  status: 'interesado' | 'contactado' | 'vinculado';
   score: number;
   slotsAvailable: number;
+  // Presente cuando quedó 'interesado'.
+  matchId?: string;
+  // Presentes cuando quedó 'en-espera'.
+  waitlistId?: string;
+  waitlistPosition?: number;
   createdAt: string;
+}
+
+// Una entrada de la lista de espera enriquecida con el nombre del joven, para el
+// panel del SENA (GET /opportunities/:id/waitlist).
+export interface WaitlistItem {
+  id: string;
+  youngId: string;
+  youngName: string;
+  position: number;
+  createdAt: string;
+}
+
+export interface WaitlistResponse {
+  opportunityId: string;
+  items: WaitlistItem[];
+  total: number;
 }
 
 // CRUD de oportunidades y gestión de cupos. El "Me interesa" crea un match,
@@ -64,6 +95,10 @@ export class OpportunitiesService {
     private readonly opportunityRepo: Repository<Opportunity>,
     @InjectRepository(Match)
     private readonly matchRepo: Repository<Match>,
+    @InjectRepository(WaitlistEntry)
+    private readonly waitlistRepo: Repository<WaitlistEntry>,
+    @InjectRepository(YoungProfile)
+    private readonly youngRepo: Repository<YoungProfile>,
     private readonly youngService: YoungService,
     private readonly matchingService: MatchingService,
   ) {}
@@ -76,6 +111,11 @@ export class OpportunitiesService {
     }
     if (query.barrio) {
       qb.andWhere('opportunity.barrio = :barrio', { barrio: query.barrio });
+    }
+    if (query.modalidad) {
+      qb.andWhere('opportunity.modalidad = :modalidad', {
+        modalidad: query.modalidad,
+      });
     }
     if (query.interest) {
       // text[]: la oportunidad cubre el interés si está en su arreglo.
@@ -120,7 +160,7 @@ export class OpportunitiesService {
     return { youngId, items, total: items.length };
   }
 
-  async expressInterest(id: string, youngId: string): Promise<MatchResult> {
+  async expressInterest(id: string, youngId: string): Promise<InterestResult> {
     const opportunity = await this.opportunityRepo.findOne({ where: { id } });
     if (!opportunity) {
       throw new NotFoundException(`Oportunidad ${id} no encontrada`);
@@ -128,6 +168,13 @@ export class OpportunitiesService {
 
     // Valida que el joven exista (lanza NotFound si no).
     const profile = await this.youngService.findOne(youngId);
+
+    const score = this.matchingService.score(profile, opportunity);
+
+    // Sin cupos: en vez de rechazar, encolamos la intención (señal de demanda).
+    if (opportunity.slotsAvailable <= 0) {
+      return this.joinWaitlist(opportunity.id, youngId, score);
+    }
 
     const existing = await this.matchRepo.findOne({
       where: { youngId, opportunityId: id },
@@ -137,12 +184,6 @@ export class OpportunitiesService {
         'El joven ya expresó interés en esta oportunidad',
       );
     }
-
-    if (opportunity.slotsAvailable <= 0) {
-      throw new ConflictException('No quedan cupos disponibles');
-    }
-
-    const score = this.matchingService.score(profile, opportunity);
 
     opportunity.slotsAvailable -= 1;
     await this.opportunityRepo.save(opportunity);
@@ -157,13 +198,81 @@ export class OpportunitiesService {
     );
 
     return {
-      id: match.id,
+      status: 'interesado',
+      waitlisted: false,
       youngId: match.youngId,
       opportunityId: match.opportunityId,
-      status: match.status,
       score: match.score,
       slotsAvailable: opportunity.slotsAvailable,
+      matchId: match.id,
       createdAt: match.createdAt.toISOString(),
     };
+  }
+
+  // Registra (o devuelve, si ya existe) la entrada en la lista de espera y
+  // calcula la posición del joven en la cola.
+  private async joinWaitlist(
+    opportunityId: string,
+    youngId: string,
+    score: number,
+  ): Promise<InterestResult> {
+    let entry = await this.waitlistRepo.findOne({
+      where: { opportunityId, youngId },
+    });
+    if (!entry) {
+      entry = await this.waitlistRepo.save(
+        this.waitlistRepo.create({ opportunityId, youngId }),
+      );
+    }
+
+    // Posición = cuántos llegaron antes (o al mismo tiempo) que este joven.
+    const position = await this.waitlistRepo.count({
+      where: { opportunityId },
+    });
+
+    return {
+      status: 'en-espera',
+      waitlisted: true,
+      youngId,
+      opportunityId,
+      score,
+      slotsAvailable: 0,
+      waitlistId: entry.id,
+      waitlistPosition: position,
+      createdAt: entry.createdAt.toISOString(),
+    };
+  }
+
+  // Lista de espera de una oportunidad, ordenada por antigüedad. Es la demanda
+  // insatisfecha que el SENA usa para decidir abrir nuevos cupos/cursos.
+  async getWaitlist(opportunityId: string): Promise<WaitlistResponse> {
+    const opportunity = await this.opportunityRepo.findOne({
+      where: { id: opportunityId },
+    });
+    if (!opportunity) {
+      throw new NotFoundException(`Oportunidad ${opportunityId} no encontrada`);
+    }
+
+    const [entries, total] = await this.waitlistRepo.findAndCount({
+      where: { opportunityId },
+      order: { createdAt: 'ASC' },
+    });
+
+    const profiles = entries.length
+      ? await this.youngRepo.find({
+          where: { id: In(entries.map((e) => e.youngId)) },
+        })
+      : [];
+    const nameById = new Map(profiles.map((p) => [p.id, p.name]));
+
+    const items: WaitlistItem[] = entries.map((entry, index) => ({
+      id: entry.id,
+      youngId: entry.youngId,
+      youngName: nameById.get(entry.youngId) ?? 'Joven',
+      position: index + 1,
+      createdAt: entry.createdAt.toISOString(),
+    }));
+
+    return { opportunityId, items, total };
   }
 }

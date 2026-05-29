@@ -124,6 +124,55 @@ describe('AiService (métodos puros)', () => {
         'Para «Diseñador UX» te falta Figma. Aún no hay un curso de cierre disponible en tu zona.',
       );
     });
+
+    it('ofrece lista de espera si el único curso de cierre está lleno', async () => {
+      const result = await aiService.generateGrowthRoute({
+        targetTitle: 'Dev backend',
+        matchingSkills: [],
+        missingSkills: [skill('s1', 'Python')],
+        closingOpportunities: [
+          {
+            skill: skill('s1', 'Python'),
+            opportunityTitle: 'Tecnólogo en Software SENA',
+            barrio: 'Chiquinquirá',
+            slotsAvailable: 0,
+            isFull: true,
+          },
+        ],
+      });
+
+      expect(result.headline).toBe(
+        'Para «Dev backend» te falta Python. Tecnólogo en Software SENA en Chiquinquirá no tiene cupos ahora — te anotamos en la lista de espera y avisamos al SENA.',
+      );
+    });
+
+    it('prioriza un curso con cupo aunque también haya uno lleno', async () => {
+      const result = await aiService.generateGrowthRoute({
+        targetTitle: 'Dev backend',
+        matchingSkills: [],
+        missingSkills: [skill('s1', 'Python')],
+        closingOpportunities: [
+          {
+            skill: skill('s1', 'Python'),
+            opportunityTitle: 'Curso lleno',
+            barrio: 'Manga',
+            slotsAvailable: 0,
+            isFull: true,
+          },
+          {
+            skill: skill('s1', 'Python'),
+            opportunityTitle: 'Curso con cupo',
+            barrio: 'El Pozón',
+            slotsAvailable: 5,
+            isFull: false,
+          },
+        ],
+      });
+
+      expect(result.headline).toBe(
+        'Para «Dev backend» te falta Python. Curso con cupo en El Pozón tiene 5 cupos — ¿te conectamos?',
+      );
+    });
   });
 
   describe('suggestSocialActivities', () => {
