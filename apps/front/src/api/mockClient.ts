@@ -1,4 +1,5 @@
 import { MOCK_DELAY_MS } from './config';
+import { ApiRequestError } from './errors';
 import { mockDemand } from '../data/mockDemand';
 import { mockOpportunities } from '../data/mockOpportunities';
 import type {
@@ -131,6 +132,7 @@ export const mockClient = {
         ...body,
         createdAt: new Date().toISOString(),
       };
+      saveToStorage(storageKeys.profile, created);
       return delay(created);
     },
     async updateProfile(id: string, body: CreateYoungProfileRequest): Promise<YoungProfileResponse> {
@@ -139,7 +141,13 @@ export const mockClient = {
         ...body,
         createdAt: new Date().toISOString(),
       };
+      saveToStorage(storageKeys.profile, updated);
       return delay(updated);
+    },
+    async getProfile(id: string): Promise<YoungProfileResponse> {
+      const stored = loadFromStorage<YoungProfileResponse | null>(storageKeys.profile, null);
+      if (stored?.id === id) return delay(stored);
+      throw new ApiRequestError(`Perfil de joven ${id} no encontrado`, 404, null);
     },
     async uploadCv(body: UploadCvRequest): Promise<UploadCvResponse> {
       const skills = extractSkillsFromText(body.cvText);

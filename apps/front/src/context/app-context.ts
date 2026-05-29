@@ -11,6 +11,7 @@ export interface AppContextValue {
   opportunities: Opportunity[];
   interests: InterestResult[];
   cvSkillsRevision: number;
+  isHydratingProfile: boolean;
   isLoadingOpportunities: boolean;
   opportunitiesError: string | null;
   isSavingProfile: boolean;
