@@ -17,19 +17,29 @@ import {
 } from 'class-validator';
 import { INTEREST_SLUGS } from '../common/interests';
 import type { InterestSlug, OpportunityKind } from '../young/young.entity';
-import { Opportunity } from './opportunity.entity';
+import {
+  Opportunity,
+  type OpportunityModality,
+} from './opportunity.entity';
 import {
   OpportunitiesService,
   type CreateOpportunityInput,
-  type MatchResult,
+  type InterestResult,
   type OpportunitiesResponse,
   type RecommendationsResponse,
+  type WaitlistResponse,
 } from './opportunities.service';
 
 const OPPORTUNITY_KINDS: OpportunityKind[] = [
   'empleo',
   'voluntariado',
   'estudio',
+];
+
+const OPPORTUNITY_MODALITIES: OpportunityModality[] = [
+  'presencial',
+  'virtual',
+  'hibrido',
 ];
 
 export class CreateOpportunityDto implements CreateOpportunityInput {
@@ -53,6 +63,9 @@ export class CreateOpportunityDto implements CreateOpportunityInput {
   @IsString()
   barrio!: string;
 
+  @IsIn(OPPORTUNITY_MODALITIES)
+  modalidad!: OpportunityModality;
+
   @IsArray()
   @IsIn(INTEREST_SLUGS, { each: true })
   interests!: InterestSlug[];
@@ -67,14 +80,20 @@ export class ExpressInterestDto {
 export class OpportunitiesController {
   constructor(private readonly opportunitiesService: OpportunitiesService) {}
 
-  // GET /opportunities?type=&interest=&barrio=
+  // GET /opportunities?type=&interest=&barrio=&modalidad=
   @Get()
   findAll(
     @Query('type') type?: OpportunityKind,
     @Query('interest') interest?: InterestSlug,
     @Query('barrio') barrio?: string,
+    @Query('modalidad') modalidad?: OpportunityModality,
   ): Promise<OpportunitiesResponse> {
-    return this.opportunitiesService.findAll({ type, interest, barrio });
+    return this.opportunitiesService.findAll({
+      type,
+      interest,
+      barrio,
+      modalidad,
+    });
   }
 
   // GET /opportunities/recommendations?youngId=   (MCP_HOOK: AI_MATCHING)
@@ -96,7 +115,15 @@ export class OpportunitiesController {
   expressInterest(
     @Param('id') id: string,
     @Body() dto: ExpressInterestDto,
-  ): Promise<MatchResult> {
+  ): Promise<InterestResult> {
     return this.opportunitiesService.expressInterest(id, dto.youngId);
+  }
+
+  // GET /opportunities/:id/waitlist — lista de espera para el panel del SENA.
+  @Get(':id/waitlist')
+  waitlist(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<WaitlistResponse> {
+    return this.opportunitiesService.getWaitlist(id);
   }
 }

@@ -12,6 +12,9 @@ export interface ClosingOpportunity {
   skill: Skill;
   opportunity: Opportunity;
   slotsAvailable: number;
+  // true cuando el curso existe pero ya no tiene cupos: el joven igual lo ve y
+  // puede entrar a la lista de espera de esa oportunidad.
+  isFull: boolean;
 }
 
 export interface GrowthRouteResponse {
@@ -77,6 +80,7 @@ export class RouteService {
           opportunityTitle: c.opportunity.title,
           barrio: c.opportunity.barrio,
           slotsAvailable: c.slotsAvailable,
+          isFull: c.isFull,
         }),
       ),
     });
@@ -103,8 +107,10 @@ export class RouteService {
     };
   }
 
-  // Para cada habilidad faltante, busca cursos/talleres que la desarrollan y
-  // tienen cupo, distintos de la oportunidad objetivo.
+  // Para cada habilidad faltante, busca cursos/talleres que la desarrollan,
+  // distintos de la oportunidad objetivo. Incluye también los que están llenos
+  // (marcados con isFull) para que el joven pueda entrar a su lista de espera.
+  // Los que tienen cupo se priorizan al frente.
   private async findClosingOpportunities(
     missingSkills: Skill[],
     targetOpportunityId: string,
@@ -128,7 +134,7 @@ export class RouteService {
       if (link.opportunityId === targetOpportunityId) continue;
       const opportunity = oppById.get(link.opportunityId);
       const skill = skillById.get(link.skillId);
-      if (!opportunity || !skill || opportunity.slotsAvailable <= 0) continue;
+      if (!opportunity || !skill) continue;
 
       const key = `${skill.id}|${opportunity.id}`;
       if (seen.has(key)) continue;
@@ -138,8 +144,11 @@ export class RouteService {
         skill,
         opportunity,
         slotsAvailable: opportunity.slotsAvailable,
+        isFull: opportunity.slotsAvailable <= 0,
       });
     }
-    return result;
+
+    // Cursos con cupo primero; los llenos quedan como alternativa con espera.
+    return result.sort((a, b) => Number(a.isFull) - Number(b.isFull));
   }
 }

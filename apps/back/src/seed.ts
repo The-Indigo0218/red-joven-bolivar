@@ -41,6 +41,7 @@ const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
     slotsTotal: 8,
     slotsAvailable: 3,
     barrio: 'Bocagrande',
+    modalidad: 'presencial',
     interests: ['emprendimiento', 'liderazgo'],
   },
   {
@@ -55,6 +56,7 @@ const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
     slotsTotal: 5,
     slotsAvailable: 2,
     barrio: 'Manga',
+    modalidad: 'hibrido',
     interests: ['tecnologia'],
   },
   {
@@ -69,6 +71,7 @@ const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
     slotsTotal: 20,
     slotsAvailable: 12,
     barrio: 'El Pozón',
+    modalidad: 'presencial',
     interests: ['liderazgo', 'arte'],
   },
   {
@@ -83,6 +86,7 @@ const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
     slotsTotal: 30,
     slotsAvailable: 18,
     barrio: 'La Boquilla',
+    modalidad: 'presencial',
     interests: ['medio-ambiente', 'liderazgo'],
   },
   {
@@ -97,6 +101,7 @@ const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
     slotsTotal: 30,
     slotsAvailable: 4,
     barrio: 'Chiquinquirá',
+    modalidad: 'virtual',
     interests: ['tecnologia', 'emprendimiento'],
   },
   {
@@ -107,6 +112,7 @@ const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
     slotsTotal: 40,
     slotsAvailable: 9,
     barrio: 'Getsemaní',
+    modalidad: 'hibrido',
     interests: ['emprendimiento', 'liderazgo'],
   },
 ];
