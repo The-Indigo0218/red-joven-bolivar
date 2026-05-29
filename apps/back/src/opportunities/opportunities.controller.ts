@@ -7,14 +7,56 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsInt,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
+import { INTEREST_SLUGS } from '../common/interests';
 import type { InterestSlug, OpportunityKind } from '../young/young.entity';
+import { Opportunity } from './opportunity.entity';
 import {
   OpportunitiesService,
+  type CreateOpportunityInput,
   type MatchResult,
   type OpportunitiesResponse,
   type RecommendationsResponse,
 } from './opportunities.service';
+
+const OPPORTUNITY_KINDS: OpportunityKind[] = [
+  'empleo',
+  'voluntariado',
+  'estudio',
+];
+
+export class CreateOpportunityDto implements CreateOpportunityInput {
+  @IsString()
+  title!: string;
+
+  @IsString()
+  organization!: string;
+
+  @IsIn(OPPORTUNITY_KINDS)
+  kind!: OpportunityKind;
+
+  @IsArray()
+  @IsString({ each: true })
+  requirements!: string[];
+
+  @IsInt()
+  @Min(1)
+  slotsTotal!: number;
+
+  @IsString()
+  barrio!: string;
+
+  @IsArray()
+  @IsIn(INTEREST_SLUGS, { each: true })
+  interests!: InterestSlug[];
+}
 
 export class ExpressInterestDto {
   @IsUUID()
@@ -41,6 +83,12 @@ export class OpportunitiesController {
     @Query('youngId', ParseUUIDPipe) youngId: string,
   ): Promise<RecommendationsResponse> {
     return this.opportunitiesService.getRecommendations(youngId);
+  }
+
+  // POST /opportunities
+  @Post()
+  create(@Body() dto: CreateOpportunityDto): Promise<Opportunity> {
+    return this.opportunitiesService.create(dto);
   }
 
   // POST /opportunities/:id/interest
