@@ -28,3 +28,21 @@ body {
 h1, h2, h3 {
   font-family: 'Syne', sans-serif;
 }
+
+.rjb-select {
+  background-color: var(--rjb-surface-2);
+  color: var(--rjb-text);
+}
+
+.rjb-select--placeholder {
+  color: var(--rjb-text-muted);
+}
+
+.rjb-select option {
+  color: var(--rjb-text);
+  background-color: var(--rjb-surface-2);
+}
+
+.rjb-select option[value=''] {
+  color: var(--rjb-text-muted);
+}

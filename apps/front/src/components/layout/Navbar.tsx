@@ -1,5 +1,3 @@
-// Navegación entre las 3 pantallas MVP. Sin react-router: estado local en App.
-
 export type View = 'onboarding' | 'feed' | 'dashboard';
 
 interface NavItem {
@@ -21,20 +19,20 @@ interface NavbarProps {
 export function Navbar({ currentView, onNavigate }: NavbarProps) {
   return (
     <nav
-      className="flex items-center justify-between px-6 py-4 border-b"
+      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 border-b"
       style={{
         backgroundColor: 'var(--rjb-surface)',
         borderColor: 'var(--rjb-border)',
       }}
     >
       <span
-        className="text-xl font-extrabold"
+        className="text-lg sm:text-xl font-extrabold"
         style={{ color: 'var(--rjb-primary)', fontFamily: "'Syne', sans-serif" }}
       >
         Red Joven Bolívar
       </span>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {NAV_ITEMS.map((item) => {
           const active = item.view === currentView;
           return (
@@ -42,7 +40,7 @@ export function Navbar({ currentView, onNavigate }: NavbarProps) {
               key={item.view}
               type="button"
               onClick={() => onNavigate(item.view)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
               style={{
                 backgroundColor: active ? 'var(--rjb-primary)' : 'var(--rjb-surface-2)',
                 color: active ? 'var(--rjb-bg)' : 'var(--rjb-text-muted)',
