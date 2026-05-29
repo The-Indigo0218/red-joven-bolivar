@@ -18,306 +18,17 @@ import {
   type SocialActivityCategory,
 } from './social-activity/social-activity.entity';
 import {
+  OPPORTUNITIES,
+  OPPORTUNITY_SKILLS,
+  PITCH_DEMO,
+} from './seed-opportunities.data';
+import {
   YoungProfile,
   type Availability,
   type EducationLevel,
   type InterestSlug,
   type SeekingType,
 } from './young/young.entity';
-
-// ─────────────────────────── Datos semilla (pitch demo) ───────────────────────────
-
-const OPPORTUNITIES: Array<Omit<Opportunity, 'id'>> = [
-  // ── Empleos ──
-  {
-    title: 'Practicante de soporte técnico de redes',
-    organization: 'Cartagena Tech Solutions',
-    kind: 'empleo',
-    requirements: [
-      'Cursando técnico/tecnólogo en sistemas',
-      'Conocimientos básicos de redes',
-      'Disponibilidad jornada mañana',
-    ],
-    slotsTotal: 5,
-    slotsAvailable: 2,
-    barrio: 'El Pozón',
-    modalidad: 'hibrido',
-    interests: ['tecnologia'],
-  },
-  {
-    title: 'Auxiliar de recepción turística bilingüe',
-    organization: 'Hotel Las Américas — Turismo Cartagena',
-    kind: 'empleo',
-    requirements: [
-      'Bachiller',
-      'Inglés conversacional básico',
-      'Disponibilidad fines de semana',
-    ],
-    slotsTotal: 8,
-    slotsAvailable: 3,
-    barrio: 'Bocagrande',
-    modalidad: 'presencial',
-    interests: ['emprendimiento', 'liderazgo'],
-  },
-  {
-    title: 'Operario de bodega y logística',
-    organization: 'Almacenes Éxito — El Pozón',
-    kind: 'empleo',
-    requirements: ['Bachiller', 'Disponibilidad turnos rotativos', 'Manejo básico de Excel'],
-    slotsTotal: 12,
-    slotsAvailable: 5,
-    barrio: 'El Pozón',
-    modalidad: 'presencial',
-    interests: ['emprendimiento'],
-  },
-  {
-    title: 'Asistente administrativo',
-    organization: 'Alcaldía Distrital de Cartagena',
-    kind: 'empleo',
-    requirements: ['Bachiller', 'Excel intermedio', 'Redacción de documentos'],
-    slotsTotal: 6,
-    slotsAvailable: 1,
-    barrio: 'Centro Histórico',
-    modalidad: 'presencial',
-    interests: ['liderazgo', 'emprendimiento'],
-  },
-  {
-    title: 'Repartidor/a de domicilios',
-    organization: 'Rappi — Cartagena',
-    kind: 'empleo',
-    requirements: ['Mayor de 18 años', 'Bicicleta o moto propia', 'Conocimiento de la ciudad'],
-    slotsTotal: 40,
-    slotsAvailable: 22,
-    barrio: 'Olaya Herrera',
-    modalidad: 'presencial',
-    interests: ['emprendimiento', 'deporte'],
-  },
-  {
-    title: 'Auxiliar de cocina',
-    organization: 'Restaurante La Mulata — Getsemaní',
-    kind: 'empleo',
-    requirements: ['Experiencia básica en cocina', 'Disponibilidad noche y fines de semana'],
-    slotsTotal: 4,
-    slotsAvailable: 2,
-    barrio: 'Getsemaní',
-    modalidad: 'presencial',
-    interests: ['emprendimiento', 'arte'],
-  },
-  {
-    title: 'Diseñador gráfico junior',
-    organization: 'Agencia Caribe Digital',
-    kind: 'empleo',
-    requirements: ['Portafolio básico', 'Canva o Photoshop', 'Creatividad'],
-    slotsTotal: 3,
-    slotsAvailable: 1,
-    barrio: 'Manga',
-    modalidad: 'virtual',
-    interests: ['arte', 'tecnologia'],
-  },
-  {
-    title: 'Técnico en mantenimiento de equipos de cómputo',
-    organization: 'Informática Popular — Manga',
-    kind: 'empleo',
-    requirements: ['Diagnóstico de hardware', 'Instalación de software', 'Atención al usuario'],
-    slotsTotal: 4,
-    slotsAvailable: 2,
-    barrio: 'Manga',
-    modalidad: 'presencial',
-    interests: ['tecnologia'],
-  },
-
-  // ── Estudios / cursos SENA y aliados ──
-  {
-    title: 'Técnico laboral en Redes de Datos — SENA El Pozón',
-    organization: 'SENA Regional Bolívar — El Pozón',
-    kind: 'estudio',
-    requirements: ['Bachiller', 'Prueba de aptitud SENA', 'Disponibilidad tiempo completo'],
-    slotsTotal: 35,
-    slotsAvailable: 0,
-    barrio: 'El Pozón',
-    modalidad: 'presencial',
-    interests: ['tecnologia'],
-  },
-  {
-    title: 'Tecnólogo en Análisis y Desarrollo de Software',
-    organization: 'SENA Regional Bolívar — Cartagena',
-    kind: 'estudio',
-    requirements: [
-      'Bachiller',
-      'Prueba de aptitud SENA',
-      'Disponibilidad tiempo completo',
-    ],
-    slotsTotal: 30,
-    slotsAvailable: 4,
-    barrio: 'Chiquinquirá',
-    modalidad: 'virtual',
-    interests: ['tecnologia', 'emprendimiento'],
-  },
-  {
-    title: 'Tecnólogo en Análisis y Desarrollo de Software — jornada El Pozón',
-    organization: 'SENA Regional Bolívar — El Pozón',
-    kind: 'estudio',
-    requirements: ['Bachiller', 'Residir en zona sur de Cartagena', 'Tiempo completo'],
-    slotsTotal: 25,
-    slotsAvailable: 3,
-    barrio: 'El Pozón',
-    modalidad: 'presencial',
-    interests: ['tecnologia', 'emprendimiento'],
-  },
-  {
-    title: 'Curso técnico de inglés para servicios turísticos',
-    organization: 'SENA Regional Bolívar — Cartagena',
-    kind: 'estudio',
-    requirements: ['Bachillerato en curso o bachiller', 'Disponibilidad jornada tarde'],
-    slotsTotal: 40,
-    slotsAvailable: 9,
-    barrio: 'Getsemaní',
-    modalidad: 'hibrido',
-    interests: ['emprendimiento', 'liderazgo'],
-  },
-  {
-    title: 'Técnico en Contabilidad y Finanzas',
-    organization: 'SENA — Olaya Herrera',
-    kind: 'estudio',
-    requirements: ['Bachiller', 'Matemáticas básicas', 'Jornada mañana'],
-    slotsTotal: 28,
-    slotsAvailable: 6,
-    barrio: 'Olaya Herrera',
-    modalidad: 'presencial',
-    interests: ['emprendimiento'],
-  },
-  {
-    title: 'Curso corto Excel para empleabilidad',
-    organization: 'SENA — Chiquinquirá',
-    kind: 'estudio',
-    requirements: ['Bachiller', 'Interés en oficina y administración'],
-    slotsTotal: 50,
-    slotsAvailable: 14,
-    barrio: 'Chiquinquirá',
-    modalidad: 'presencial',
-    interests: ['emprendimiento', 'tecnologia'],
-  },
-  {
-    title: 'Técnico en Turismo y Guianza',
-    organization: 'Universidad de Cartagena — Centro',
-    kind: 'estudio',
-    requirements: ['Bachiller', 'Inglés básico deseable'],
-    slotsTotal: 20,
-    slotsAvailable: 7,
-    barrio: 'Centro Histórico',
-    modalidad: 'presencial',
-    interests: ['emprendimiento', 'liderazgo'],
-  },
-  {
-    title: 'Diplomado en Marketing Digital',
-    organization: 'SENA + Platzi — Cartagena',
-    kind: 'estudio',
-    requirements: ['Mayor de 16 años', 'Acceso a internet'],
-    slotsTotal: 60,
-    slotsAvailable: 18,
-    barrio: 'Bocagrande',
-    modalidad: 'virtual',
-    interests: ['emprendimiento', 'tecnologia'],
-  },
-  {
-    title: 'Técnico en Electricidad Industrial',
-    organization: 'SENA — La Boquilla',
-    kind: 'estudio',
-    requirements: ['Bachiller', 'Disponibilidad tiempo completo'],
-    slotsTotal: 22,
-    slotsAvailable: 4,
-    barrio: 'La Boquilla',
-    modalidad: 'presencial',
-    interests: ['tecnologia'],
-  },
-  {
-    title: 'Bachillerato Plus nocturno para jóvenes trabajadores',
-    organization: 'I.E. Nelson Mandela',
-    kind: 'estudio',
-    requirements: ['Mayor de 15 años', 'Disponibilidad noche'],
-    slotsTotal: 45,
-    slotsAvailable: 11,
-    barrio: 'Nelson Mandela',
-    modalidad: 'presencial',
-    interests: ['liderazgo', 'deporte'],
-  },
-
-  // ── Voluntariados ──
-  {
-    title: 'Tallerista de liderazgo juvenil comunitario',
-    organization: 'Fundación Mi Sangre',
-    kind: 'voluntariado',
-    requirements: [
-      'Mayor de 16 años',
-      'Habilidades de comunicación',
-      'Compromiso de 4 horas semanales',
-    ],
-    slotsTotal: 20,
-    slotsAvailable: 12,
-    barrio: 'El Pozón',
-    modalidad: 'presencial',
-    interests: ['liderazgo', 'arte'],
-  },
-  {
-    title: 'Brigada de recuperación de la Ciénaga de la Virgen',
-    organization: 'Fundación Mi Sangre',
-    kind: 'voluntariado',
-    requirements: [
-      'Mayor de 15 años',
-      'Disponibilidad fines de semana',
-      'Interés en medio ambiente',
-    ],
-    slotsTotal: 30,
-    slotsAvailable: 18,
-    barrio: 'La Boquilla',
-    modalidad: 'presencial',
-    interests: ['medio-ambiente', 'liderazgo'],
-  },
-  {
-    title: 'Mentoría de lectura en biblioteca comunitaria',
-    organization: 'Biblioteca Distrital — El Bosque',
-    kind: 'voluntariado',
-    requirements: ['Mayor de 16 años', 'Paciencia con niños', '2 horas semanales'],
-    slotsTotal: 15,
-    slotsAvailable: 8,
-    barrio: 'El Bosque',
-    modalidad: 'presencial',
-    interests: ['arte', 'liderazgo'],
-  },
-  {
-    title: 'Escuela de fútbol comunitaria',
-    organization: 'IDRD Cartagena — Nelson Mandela',
-    kind: 'voluntariado',
-    requirements: ['Mayor de 15 años', 'Trabajo en equipo', 'Fines de semana'],
-    slotsTotal: 25,
-    slotsAvailable: 15,
-    barrio: 'Nelson Mandela',
-    modalidad: 'presencial',
-    interests: ['deporte', 'liderazgo'],
-  },
-  {
-    title: 'Red juvenil de primeros auxilios',
-    organization: 'Cruz Roja Colombiana — Cartagena',
-    kind: 'voluntariado',
-    requirements: ['Mayor de 16 años', 'Compromiso de 6 meses'],
-    slotsTotal: 18,
-    slotsAvailable: 10,
-    barrio: 'Manga',
-    modalidad: 'hibrido',
-    interests: ['liderazgo', 'deporte'],
-  },
-  {
-    title: 'Huerta urbana comunitaria',
-    organization: 'Corporación Sembrando Futuro',
-    kind: 'voluntariado',
-    requirements: ['Interés en agricultura urbana', 'Fines de semana'],
-    slotsTotal: 12,
-    slotsAvailable: 6,
-    barrio: 'Olaya Herrera',
-    modalidad: 'presencial',
-    interests: ['medio-ambiente', 'emprendimiento'],
-  },
-];
 
 const BARRIO_DISTRIBUTION: Array<{ barrio: string; count: number }> = [
   { barrio: 'El Pozón', count: 130 },
@@ -411,78 +122,6 @@ const SKILLS: Array<{ slug: string; label: string; category: SkillCategory }> = 
   { slug: 'atencion-cliente', label: 'Atención al cliente', category: 'blanda' },
   { slug: 'comunicacion', label: 'Comunicación', category: 'blanda' },
   { slug: 'educacion-ambiental', label: 'Educación ambiental', category: 'tecnica' },
-];
-
-const OPPORTUNITY_SKILLS: Array<{
-  opportunityTitle: string;
-  required: boolean;
-  skillSlugs: string[];
-}> = [
-  {
-    opportunityTitle: 'Practicante de soporte técnico de redes',
-    required: true,
-    skillSlugs: ['redes', 'logica-programacion'],
-  },
-  {
-    opportunityTitle: 'Auxiliar de recepción turística bilingüe',
-    required: true,
-    skillSlugs: ['ingles-conversacional', 'atencion-cliente'],
-  },
-  {
-    opportunityTitle: 'Operario de bodega y logística',
-    required: true,
-    skillSlugs: ['excel-avanzado'],
-  },
-  {
-    opportunityTitle: 'Asistente administrativo',
-    required: true,
-    skillSlugs: ['excel-avanzado', 'comunicacion'],
-  },
-  {
-    opportunityTitle: 'Diseñador gráfico junior',
-    required: true,
-    skillSlugs: ['comunicacion'],
-  },
-  {
-    opportunityTitle: 'Técnico en mantenimiento de equipos de cómputo',
-    required: true,
-    skillSlugs: ['logica-programacion', 'atencion-cliente'],
-  },
-  {
-    opportunityTitle: 'Técnico laboral en Redes de Datos — SENA El Pozón',
-    required: false,
-    skillSlugs: ['redes', 'logica-programacion'],
-  },
-  {
-    opportunityTitle: 'Tecnólogo en Análisis y Desarrollo de Software',
-    required: false,
-    skillSlugs: ['logica-programacion', 'bases-datos', 'redes'],
-  },
-  {
-    opportunityTitle: 'Tecnólogo en Análisis y Desarrollo de Software — jornada El Pozón',
-    required: false,
-    skillSlugs: ['logica-programacion', 'bases-datos', 'redes'],
-  },
-  {
-    opportunityTitle: 'Curso técnico de inglés para servicios turísticos',
-    required: false,
-    skillSlugs: ['ingles-tecnico', 'ingles-conversacional'],
-  },
-  {
-    opportunityTitle: 'Curso corto Excel para empleabilidad',
-    required: false,
-    skillSlugs: ['excel-avanzado'],
-  },
-  {
-    opportunityTitle: 'Tallerista de liderazgo juvenil comunitario',
-    required: false,
-    skillSlugs: ['comunicacion'],
-  },
-  {
-    opportunityTitle: 'Brigada de recuperación de la Ciénaga de la Virgen',
-    required: false,
-    skillSlugs: ['educacion-ambiental'],
-  },
 ];
 
 const SOCIAL_ACTIVITIES: Array<{
@@ -580,14 +219,6 @@ const REDEMPTION_CATALOG: Array<Omit<RedemptionCatalog, 'id'>> = [
     discount: null,
   },
 ];
-
-// Títulos clave para el guion del pitch de 3 minutos.
-const PITCH = {
-  mariaName: 'María Torres',
-  practicanteTitle: 'Practicante de soporte técnico de redes',
-  fullCourseTitle: 'Técnico laboral en Redes de Datos — SENA El Pozón',
-  waitlistTarget: 47,
-};
 
 async function seed(): Promise<void> {
   const force = process.argv.includes('--force');
@@ -702,7 +333,7 @@ async function seed(): Promise<void> {
   // ── Protagonista del pitch: María, 19, El Pozón ──
   const maria = await youngRepo.save(
     youngRepo.create({
-      name: PITCH.mariaName,
+      name: PITCH_DEMO.mariaName,
       age: 19,
       barrio: 'El Pozón',
       educationLevel: 'bachiller',
@@ -738,7 +369,7 @@ async function seed(): Promise<void> {
   console.log(`✓ pitch demo: ${maria.name} (${maria.id}) — El Pozón, tecnología`);
 
   // ── Lista de espera: 47 jóvenes en curso SENA Redes (lleno) ──
-  const fullCourseId = oppIdByTitle.get(PITCH.fullCourseTitle);
+  const fullCourseId = oppIdByTitle.get(PITCH_DEMO.fullCourseTitle);
   if (fullCourseId) {
     const waitlistCandidates = await youngRepo
       .createQueryBuilder('y')
@@ -746,7 +377,7 @@ async function seed(): Promise<void> {
       .andWhere("'tecnologia' = ANY(y.interests)")
       .andWhere('y.id != :mariaId', { mariaId: maria.id })
       .orderBy('y.createdAt', 'ASC')
-      .limit(PITCH.waitlistTarget)
+      .limit(PITCH_DEMO.waitlistTarget)
       .getMany();
 
     if (waitlistCandidates.length > 0) {
@@ -757,14 +388,14 @@ async function seed(): Promise<void> {
       );
     }
     console.log(
-      `✓ ${waitlistCandidates.length} jóvenes en lista de espera — "${PITCH.fullCourseTitle}"`,
+      `✓ ${waitlistCandidates.length} jóvenes en lista de espera — "${PITCH_DEMO.fullCourseTitle}"`,
     );
   }
 
   // ── Matches: señales de interés repartidas ──
-  const practicanteId = oppIdByTitle.get(PITCH.practicanteTitle);
+  const practicanteId = oppIdByTitle.get(PITCH_DEMO.practicanteTitle);
   const matchTargets = savedOpps.filter(
-    (o) => o.slotsAvailable > 0 && o.title !== PITCH.practicanteTitle,
+    (o) => o.slotsAvailable > 0 && o.title !== PITCH_DEMO.practicanteTitle,
   );
   const matchYoungs = await youngRepo.find({ take: 35, order: { createdAt: 'ASC' } });
   const matches: Match[] = [];
@@ -799,7 +430,7 @@ async function seed(): Promise<void> {
   console.log('   CV demo: docs/fixtures/cvs/maria-torres-pitch.txt');
   console.log('   Empleo WOW: Practicante soporte técnico de redes (El Pozón)');
   console.log('   Curso lleno: Técnico Redes SENA El Pozón → lista de espera');
-  console.log(`   Dashboard: ~${PITCH.waitlistTarget} en espera tecnología El Pozón`);
+  console.log(`   Dashboard: ~${PITCH_DEMO.waitlistTarget} en espera tecnología El Pozón`);
   console.log('');
   console.log('🌱  Seed completo.');
   await app.close();
@@ -809,3 +440,4 @@ seed().catch((err) => {
   console.error('Seed falló:', err);
   process.exit(1);
 });
+
