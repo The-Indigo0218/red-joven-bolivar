@@ -3,10 +3,12 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
-import { IsIn, IsString } from 'class-validator';
+import { IsIn, IsString, IsUUID } from 'class-validator';
 import { INTEREST_SLUGS } from '../common/interests';
 import type { InterestSlug } from '../young/young.entity';
 import {
@@ -26,6 +28,11 @@ export class CreateGroupDto implements CreateGroupInput {
 
   @IsIn(INTEREST_SLUGS)
   interest!: InterestSlug;
+}
+
+export class AddGroupMemberDto {
+  @IsUUID()
+  youngId!: string;
 }
 
 @Controller('groups')
@@ -62,5 +69,14 @@ export class GroupsController {
     @Query('interest') interest?: InterestSlug,
   ): Promise<GroupsResponse> {
     return this.groupsService.findAll({ barrio, interest });
+  }
+
+  // POST /groups/:id/members
+  @Post(':id/members')
+  addMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddGroupMemberDto,
+  ): Promise<GroupResponse> {
+    return this.groupsService.addMember(id, dto.youngId);
   }
 }
