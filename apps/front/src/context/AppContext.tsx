@@ -9,17 +9,54 @@ import { api } from '../api';
 import { ApiRequestError } from '../api';
 import type {
   CreateYoungProfileRequest,
-  MatchResponse,
+  InterestResult,
   Opportunity,
   YoungProfileResponse,
 } from '../types';
 import { loadFromStorage, saveToStorage, storageKeys } from '../utils/storage';
 import { AppContext } from './app-context';
 
+function normalizeInterest(raw: unknown): InterestResult | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const item = raw as Record<string, unknown>;
+  if (!item.youngId || !item.opportunityId) return null;
+
+  if ('waitlisted' in item) {
+    return item as unknown as InterestResult;
+  }
+
+  return {
+    status: 'interesado',
+    waitlisted: false,
+    youngId: item.youngId as string,
+    opportunityId: item.opportunityId as string,
+    score: (item.score as number) ?? 0,
+    slotsAvailable: (item.slotsAvailable as number) ?? 0,
+    matchId: item.id as string | undefined,
+    createdAt: (item.createdAt as string) ?? new Date().toISOString(),
+  };
+}
+
+function loadInitialInterests(profile: YoungProfileResponse | null): InterestResult[] {
+  const stored = loadFromStorage<unknown[]>(storageKeys.matches, []);
+  const interests = stored
+    .map(normalizeInterest)
+    .filter((item): item is InterestResult => item !== null);
+  if (!profile) return [];
+  return interests.filter((i) => i.youngId === profile.id);
+}
+
 function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof ApiRequestError) return error.message;
+  if (error instanceof ApiRequestError) {
+    return error.message || fallback;
+  }
   if (error instanceof Error) return error.message;
   return fallback;
+}
+
+function clearStoredInterests(setInterests: (interests: InterestResult[]) => void): void {
+  setInterests([]);
+  localStorage.removeItem(storageKeys.matches);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -27,8 +64,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadFromStorage<YoungProfileResponse | null>(storageKeys.profile, null),
   );
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [matches, setMatches] = useState<MatchResponse[]>(() =>
-    loadFromStorage(storageKeys.matches, []),
+  const [interests, setInterests] = useState<InterestResult[]>(() =>
+    loadInitialInterests(loadFromStorage<YoungProfileResponse | null>(storageKeys.profile, null)),
   );
   const [isLoadingOpportunities, setIsLoadingOpportunities] = useState(true);
   const [opportunitiesError, setOpportunitiesError] = useState<string | null>(null);
@@ -80,65 +117,84 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsSavingProfile(true);
     try {
       const created = await api.young.createProfile(request);
+      if (profile?.id && profile.id !== created.id) {
+        clearStoredInterests(setInterests);
+      }
       setProfile(created);
       saveToStorage(storageKeys.profile, created);
       return created;
     } finally {
       setIsSavingProfile(false);
     }
-  }, []);
+  }, [profile?.id]);
 
   const clearProfile = useCallback(() => {
     setProfile(null);
+    clearStoredInterests(setInterests);
     localStorage.removeItem(storageKeys.profile);
   }, []);
 
+  const findInterest = useCallback(
+    (opportunityId: string) => {
+      if (!profile) return undefined;
+      return interests.find(
+        (i) => i.youngId === profile.id && i.opportunityId === opportunityId,
+      );
+    },
+    [interests, profile],
+  );
+
   const isInterestedIn = useCallback(
-    (opportunityId: string) => matches.some((m) => m.opportunityId === opportunityId),
-    [matches],
+    (opportunityId: string) => findInterest(opportunityId)?.status === 'interesado',
+    [findInterest],
+  );
+
+  const isWaitlisted = useCallback(
+    (opportunityId: string) => findInterest(opportunityId)?.status === 'en-espera',
+    [findInterest],
+  );
+
+  const getWaitlistPosition = useCallback(
+    (opportunityId: string) => findInterest(opportunityId)?.waitlistPosition ?? null,
+    [findInterest],
   );
 
   const expressInterest = useCallback(
-    async (opportunityId: string): Promise<MatchResponse | null> => {
+    async (opportunityId: string): Promise<InterestResult | null> => {
       if (!profile) return null;
-      if (isInterestedIn(opportunityId)) return null;
-
-      const opportunity = opportunities.find((o) => o.id === opportunityId);
-      if (!opportunity || opportunity.slotsAvailable <= 0) return null;
+      if (findInterest(opportunityId)) return null;
 
       setInterestLoadingId(opportunityId);
       try {
-        const match = await api.opportunities.expressInterest(opportunityId, {
+        const result = await api.opportunities.expressInterest(opportunityId, {
           youngId: profile.id,
         });
 
         setOpportunities((prev) =>
           prev.map((o) =>
-            o.id === opportunityId ? { ...o, slotsAvailable: match.slotsAvailable } : o,
+            o.id === opportunityId ? { ...o, slotsAvailable: result.slotsAvailable } : o,
           ),
         );
 
-        setMatches((prev) => {
-          const next = [...prev, match];
+        setInterests((prev) => {
+          const next = [...prev, result];
           saveToStorage(storageKeys.matches, next);
           return next;
         });
 
-        return match;
-      } catch {
-        return null;
+        return result;
       } finally {
         setInterestLoadingId(null);
       }
     },
-    [profile, opportunities, isInterestedIn],
+    [profile, findInterest],
   );
 
   const value = useMemo(
     () => ({
       profile,
       opportunities,
-      matches,
+      interests,
       isLoadingOpportunities,
       opportunitiesError,
       isSavingProfile,
@@ -147,12 +203,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearProfile,
       expressInterest,
       isInterestedIn,
+      isWaitlisted,
+      getWaitlistPosition,
       refreshOpportunities,
     }),
     [
       profile,
       opportunities,
-      matches,
+      interests,
       isLoadingOpportunities,
       opportunitiesError,
       isSavingProfile,
@@ -161,6 +219,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearProfile,
       expressInterest,
       isInterestedIn,
+      isWaitlisted,
+      getWaitlistPosition,
       refreshOpportunities,
     ],
   );

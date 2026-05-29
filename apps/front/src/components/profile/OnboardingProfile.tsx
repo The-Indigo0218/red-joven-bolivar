@@ -171,7 +171,7 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
           }}
         >
           Perfil guardado. ¡Hola, {profile.name}! Podés ver oportunidades en la pestaña
-          correspondiente o subir tu CV en PDF para mejorar tu ruta.
+          correspondiente o subir tu CV (PDF o TXT) para mejorar tu ruta.
         </div>
       )}
 
@@ -185,7 +185,7 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
         >
           <h2 className="text-base font-bold mb-1">Tu CV</h2>
           <p className="text-sm mb-4" style={{ color: 'var(--rjb-text-muted)' }}>
-            Sube tu hoja de vida en PDF. La IA extrae tus habilidades y mejora el score en{' '}
+            Sube tu hoja de vida en PDF o TXT. La IA extrae tus habilidades y mejora el score en{' '}
             <strong>Ver mi ruta</strong>.
           </p>
           <button
@@ -194,7 +194,7 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
             className="px-4 py-2.5 rounded-lg text-sm font-semibold"
             style={{ backgroundColor: 'var(--rjb-accent)', color: 'var(--rjb-bg)' }}
           >
-            Subir CV (PDF)
+            Subir CV (PDF o TXT)
           </button>
 
           {cvResult && cvResult.skills.length > 0 && (
@@ -468,6 +468,8 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
                 setForm(INITIAL_FORM);
                 setSubmitted(false);
                 setErrors({});
+                setCvResult(null);
+                setCvModalOpen(false);
               }}
               className="px-4 py-3 rounded-lg text-sm font-semibold border"
               style={{

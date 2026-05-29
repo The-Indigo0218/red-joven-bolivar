@@ -22,9 +22,14 @@ export function GapCounter({ gaps }: GapCounterProps) {
           <p className="text-4xl font-extrabold" style={{ color: 'var(--rjb-warning)' }}>
             {gap.gap}
           </p>
-          <p className="text-xs uppercase tracking-wide mb-2" style={{ color: 'var(--rjb-text-muted)' }}>
+          <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'var(--rjb-text-muted)' }}>
             jóvenes sin cupo
           </p>
+          {gap.waitlistCount > 0 && (
+            <p className="text-sm font-semibold mb-2" style={{ color: 'var(--rjb-accent)' }}>
+              {gap.waitlistCount} en lista de espera
+            </p>
+          )}
           <p className="text-sm">{gap.headline}</p>
         </div>
       ))}

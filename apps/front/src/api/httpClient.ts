@@ -1,5 +1,5 @@
 import { API_BASE_URL } from './config';
-import { ApiRequestError } from './errors';
+import { ApiRequestError, messageFromApiBody } from './errors';
 import type {
   CivicCoinsBalanceResponse,
   CreateRedemptionRequest,
@@ -9,7 +9,7 @@ import type {
   EarnCivicCoinsResponse,
   ExpressInterestRequest,
   GrowthRouteResponse,
-  MatchResponse,
+  InterestResult,
   OpportunitiesQuery,
   OpportunitiesResponse,
   RedemptionCatalogResponse,
@@ -17,7 +17,9 @@ import type {
   SuggestedActivitiesResponse,
   UploadCvRequest,
   UploadCvResponse,
+  WaitlistResponse,
   YoungProfileResponse,
+  ApiError,
 } from '../types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -32,7 +34,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // respuesta no JSON
     }
-    throw new ApiRequestError(`Error ${response.status} en ${path}`, response.status, body);
+    throw new ApiRequestError(
+      messageFromApiBody(body, `Error ${response.status} en ${path}`),
+      response.status,
+      body as ApiError | null,
+    );
   }
   return response.json() as Promise<T>;
 }
@@ -42,6 +48,7 @@ function toQueryString(query: OpportunitiesQuery): string {
   if (query.type) params.set('type', query.type);
   if (query.interest) params.set('interest', query.interest);
   if (query.barrio) params.set('barrio', query.barrio);
+  if (query.modalidad) params.set('modalidad', query.modalidad);
   const qs = params.toString();
   return qs ? `?${qs}` : '';
 }
@@ -59,8 +66,11 @@ export const httpClient = {
     list(query: OpportunitiesQuery = {}): Promise<OpportunitiesResponse> {
       return request<OpportunitiesResponse>(`/opportunities${toQueryString(query)}`);
     },
-    expressInterest(id: string, body: ExpressInterestRequest): Promise<MatchResponse> {
-      return request<MatchResponse>(`/opportunities/${id}/interest`, { method: 'POST', body: JSON.stringify(body) });
+    expressInterest(id: string, body: ExpressInterestRequest): Promise<InterestResult> {
+      return request<InterestResult>(`/opportunities/${id}/interest`, { method: 'POST', body: JSON.stringify(body) });
+    },
+    getWaitlist(id: string): Promise<WaitlistResponse> {
+      return request<WaitlistResponse>(`/opportunities/${id}/waitlist`);
     },
     getRoute(opportunityId: string, youngId: string): Promise<GrowthRouteResponse> {
       return request<GrowthRouteResponse>(

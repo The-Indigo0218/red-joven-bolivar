@@ -19,6 +19,7 @@ export const mockOpportunities: Opportunity[] = [
     slotsTotal: 8,
     slotsAvailable: 3,
     barrio: 'Bocagrande',
+    modalidad: 'presencial',
     interests: ['emprendimiento', 'liderazgo'],
   },
   {
@@ -34,6 +35,7 @@ export const mockOpportunities: Opportunity[] = [
     slotsTotal: 5,
     slotsAvailable: 2,
     barrio: 'Manga',
+    modalidad: 'hibrido',
     interests: ['tecnologia'],
   },
 
@@ -51,6 +53,7 @@ export const mockOpportunities: Opportunity[] = [
     slotsTotal: 20,
     slotsAvailable: 12,
     barrio: 'El Pozón',
+    modalidad: 'presencial',
     interests: ['liderazgo', 'arte'],
   },
   {
@@ -66,6 +69,7 @@ export const mockOpportunities: Opportunity[] = [
     slotsTotal: 30,
     slotsAvailable: 18,
     barrio: 'La Boquilla',
+    modalidad: 'presencial',
     interests: ['medio-ambiente', 'liderazgo'],
   },
 
@@ -81,8 +85,9 @@ export const mockOpportunities: Opportunity[] = [
       'Disponibilidad tiempo completo',
     ],
     slotsTotal: 30,
-    slotsAvailable: 4,
+    slotsAvailable: 0,
     barrio: 'Chiquinquirá',
+    modalidad: 'presencial',
     interests: ['tecnologia', 'emprendimiento'],
   },
   {
@@ -97,6 +102,7 @@ export const mockOpportunities: Opportunity[] = [
     slotsTotal: 40,
     slotsAvailable: 9,
     barrio: 'Getsemaní',
+    modalidad: 'virtual',
     interests: ['emprendimiento', 'liderazgo'],
   },
 ];

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent, type
 import { api } from '../../api';
 import { ApiRequestError } from '../../api/errors';
 import type { Skill, UploadCvResponse } from '../../types';
-import { extractTextFromPdf } from '../../utils/extractPdfText';
+import { extractTextFromCvFile } from '../../utils/extractPdfText';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 type ModalStep = 'pick' | 'processing' | 'success';
@@ -58,12 +58,17 @@ export function UploadCvModal({
   if (!open) return null;
 
   async function handleFile(file: File) {
+    if (!youngId) {
+      setError('Guarda tu perfil antes de subir el CV.');
+      return;
+    }
+
     setError(null);
     setFileName(file.name);
     setStep('processing');
 
     try {
-      const cvText = await extractTextFromPdf(file);
+      const cvText = await extractTextFromCvFile(file);
       const response = await api.young.uploadCv({ cvText, youngId });
       setResult(response);
       setStep('success');
@@ -122,8 +127,8 @@ export function UploadCvModal({
             </h2>
             <p className="text-sm mt-1" style={{ color: 'var(--rjb-text-muted)' }}>
               {youngName
-                ? `PDF de ${youngName} — extraemos tus habilidades para mejorar tu ruta.`
-                : 'Sube tu CV en PDF para detectar tus habilidades.'}
+                ? `CV de ${youngName} (PDF o TXT) — extraemos tus habilidades para mejorar tu ruta.`
+                : 'Sube tu CV en PDF o TXT para detectar tus habilidades.'}
             </p>
           </div>
           {step !== 'processing' && (
@@ -167,17 +172,17 @@ export function UploadCvModal({
                 <p className="text-4xl mb-3" aria-hidden>
                   📄
                 </p>
-                <p className="font-semibold mb-1">Arrastra tu PDF aqui</p>
+                <p className="font-semibold mb-1">Arrastra tu CV aqui</p>
                 <p className="text-sm mb-4" style={{ color: 'var(--rjb-text-muted)' }}>
                   o haz clic para elegir archivo
                 </p>
                 <p className="text-xs" style={{ color: 'var(--rjb-text-muted)' }}>
-                  Solo PDF · maximo 5 MB
+                  PDF o TXT · maximo 5 MB
                 </p>
                 <input
                   ref={inputRef}
                   type="file"
-                  accept="application/pdf,.pdf"
+                  accept="application/pdf,.pdf,text/plain,.txt"
                   className="sr-only"
                   onChange={handleInputChange}
                 />

@@ -13,6 +13,8 @@ export type InterestSlug =
 
 export type OpportunityKind = 'empleo' | 'voluntariado' | 'estudio';
 
+export type OpportunityModality = 'presencial' | 'virtual' | 'hibrido';
+
 export type SeekingType = OpportunityKind | 'todos';
 
 export type EducationLevel =
@@ -69,6 +71,7 @@ export interface OpportunitiesQuery {
   type?: OpportunityKind; // tab seleccionado
   interest?: InterestSlug;
   barrio?: string;
+  modalidad?: OpportunityModality;
 }
 
 export interface Opportunity {
@@ -80,6 +83,7 @@ export interface Opportunity {
   slotsTotal: number;
   slotsAvailable: number;
   barrio: string;
+  modalidad: OpportunityModality;
   interests: InterestSlug[];
 }
 
@@ -94,14 +98,33 @@ export interface ExpressInterestRequest {
   youngId: string;
 }
 
-export interface MatchResponse {
-  id: string;
+export type InterestStatus = 'interesado' | 'en-espera';
+
+export interface InterestResult {
+  status: InterestStatus;
+  waitlisted: boolean;
   youngId: string;
   opportunityId: string;
-  status: MatchStatus; // arranca en 'interesado'
-  score: number; // afinidad 0..1 (reglas hoy, IA mañana)
-  slotsAvailable: number; // cupos restantes tras la expresión de interés
+  score: number;
+  slotsAvailable: number;
+  matchId?: string;
+  waitlistId?: string;
+  waitlistPosition?: number;
   createdAt: string;
+}
+
+export interface WaitlistItem {
+  id: string;
+  youngId: string;
+  youngName: string;
+  position: number;
+  createdAt: string;
+}
+
+export interface WaitlistResponse {
+  opportunityId: string;
+  items: WaitlistItem[];
+  total: number;
 }
 
 // ───────────────────────── GET /demand/dashboard ─────────────────────────
@@ -135,7 +158,8 @@ export interface DemandGap {
   youngCount: number; // jóvenes que lo quieren
   slotsOffered: number; // cupos disponibles
   gap: number; // youngCount - slotsOffered
-  headline: string; // "200 jóvenes quieren estudiar sistemas — solo 30 cupos en el SENA"
+  waitlistCount: number; // jóvenes en lista de espera
+  headline: string;
 }
 
 // ───────────────────────── GET /demand/by-zone ─────────────────────────
@@ -204,6 +228,7 @@ export interface ClosingOpportunity {
   skill: Skill;
   opportunity: Opportunity;
   slotsAvailable: number;
+  isFull: boolean;
 }
 
 export interface GrowthRouteResponse {

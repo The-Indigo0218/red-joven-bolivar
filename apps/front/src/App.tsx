@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import { AppProvider } from './context/AppContext';
 
+import { useApp } from './hooks/useApp';
+
 import { Navbar, type View } from './components/layout/Navbar';
 
 import { OnboardingProfile } from './components/profile/OnboardingProfile';
@@ -17,6 +19,8 @@ import { CivicCoinsScreen } from './components/civiccoins/CivicCoinsScreen';
 
 
 function AppContent() {
+
+  const { profile } = useApp();
 
   const [currentView, setCurrentView] = useState<View>('onboarding');
 
@@ -84,6 +88,8 @@ function AppContent() {
 
           <RutaPersonal
 
+            key={`${routeOpportunityId}-${profile?.id ?? 'none'}`}
+
             opportunityId={routeOpportunityId}
 
             onBack={() => setCurrentView('feed')}
@@ -96,7 +102,13 @@ function AppContent() {
 
         {currentView === 'civiccoins' && (
 
-          <CivicCoinsScreen onGoToProfile={() => setCurrentView('onboarding')} />
+          <CivicCoinsScreen
+
+            key={profile?.id ?? 'no-profile'}
+
+            onGoToProfile={() => setCurrentView('onboarding')}
+
+          />
 
         )}
 
