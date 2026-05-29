@@ -76,6 +76,41 @@ universidades). Visualiza la demanda agregada.
   Es la métrica estrella: demanda declarada vs. oferta existente.
 - **Datos simulados:** `front/src/data/mockDemand.ts`
 
+### Checklist de tareas del FRONT
+
+Estado al momento de armar el punto de partida. Lo marcado `[x]` ya funciona;
+lo marcado `[ ]` es lo que queda por construir.
+
+**Ya hecho (base lista)**
+- [x] Scaffold Vite + React 18 + TS + Tailwind v3 + variables CSS + fuentes.
+- [x] Estructura de carpetas (`components/`, `data/`, `types/`).
+- [x] Tipos compartidos en `types/index.ts` (calcan con `API_CONTRACTS.md`).
+- [x] Mocks: `mockOpportunities.ts`, `mockDemand.ts`, `mockBarrios.ts`.
+- [x] `App.tsx` + `Navbar`: navegación local entre las 3 vistas.
+- [x] **DemandDashboard completo** (el diferenciador): `DemandMap` (Leaflet),
+      `DemandChart` (Recharts) y `GapCounter`, alimentados por `mockDemand`.
+- [x] `OpportunitiesFeed`: tabs Empleos/Voluntariados/Estudios + render de
+      `OpportunityCard` filtrando por tipo (tab).
+
+**Pendiente (lo que sigue)**
+- [ ] **OnboardingProfile — formulario real.** Hoy es un esqueleto. Construir
+      todos los campos (nombre, edad, barrio desde `mockBarrios`, intereses
+      múltiples, nivel educativo, qué busca, disponibilidad) y armar el objeto
+      `CreateYoungProfileRequest`.
+- [ ] **Compartir el perfil entre pantallas.** Subir el `YoungProfile` a `App`
+      (o un Context) para que el feed pueda usarlo. Persistir en `localStorage`
+      en modo demo.
+- [ ] **Filtrado del feed por perfil.** `OpportunitiesFeed` hoy filtra solo por
+      tab; falta combinar también `interests` y `barrio` del joven.
+- [ ] **Acción "Me interesa".** Cablear el prop `onInterest` de
+      `OpportunityCard`: en demo, decrementar cupos en estado local y registrar
+      la señal de demanda.
+- [ ] **Capa de API real (Fase 3).** Reemplazar los imports de `mock*` por un
+      cliente que llame al back. Los tipos ya calzan, así que no se tocan los
+      componentes.
+- [ ] **Pulido UX.** Estados vacíos, loading, responsive y validación visual
+      del formulario.
+
 ---
 
 ## BACK — Módulos NestJS
