@@ -13,7 +13,9 @@ import type {
   EducationLevel,
   InterestSlug,
   SeekingType,
+  UploadCvResponse,
 } from '../../types';
+import { UploadCvModal } from './UploadCvModal';
 
 interface FormState {
   name: string;
@@ -107,6 +109,8 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
   );
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [cvModalOpen, setCvModalOpen] = useState(false);
+  const [cvResult, setCvResult] = useState<UploadCvResponse | null>(null);
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -167,9 +171,60 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
           }}
         >
           Perfil guardado. ¡Hola, {profile.name}! Podés ver oportunidades en la pestaña
-          correspondiente.
+          correspondiente o subir tu CV en PDF para mejorar tu ruta.
         </div>
       )}
+
+      {profile && (
+        <div
+          className="mb-6 rounded-2xl p-4 sm:p-5 border"
+          style={{
+            backgroundColor: 'var(--rjb-surface)',
+            borderColor: 'var(--rjb-border)',
+          }}
+        >
+          <h2 className="text-base font-bold mb-1">Tu CV</h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--rjb-text-muted)' }}>
+            Sube tu hoja de vida en PDF. La IA extrae tus habilidades y mejora el score en{' '}
+            <strong>Ver mi ruta</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setCvModalOpen(true)}
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold"
+            style={{ backgroundColor: 'var(--rjb-accent)', color: 'var(--rjb-bg)' }}
+          >
+            Subir CV (PDF)
+          </button>
+
+          {cvResult && cvResult.skills.length > 0 && (
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--rjb-border)' }}>
+              <p className="text-sm font-semibold mb-2">
+                Ultimas habilidades detectadas ({Math.round(cvResult.confidence * 100)}% confianza)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {cvResult.skills.map((skill) => (
+                  <span
+                    key={skill.id}
+                    className="px-3 py-1 rounded-full text-xs font-medium border"
+                    style={{ borderColor: 'var(--rjb-accent)', color: 'var(--rjb-accent)' }}
+                  >
+                    {skill.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <UploadCvModal
+        open={cvModalOpen}
+        youngId={profile?.id ?? ''}
+        youngName={profile?.name}
+        onClose={() => setCvModalOpen(false)}
+        onSuccess={(response) => setCvResult(response)}
+      />
 
       <form
         onSubmit={handleSubmit}

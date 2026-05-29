@@ -56,13 +56,14 @@ export function CivicCoinsScreen({ onGoToProfile }: CivicCoinsScreenProps) {
       return;
     }
 
+    const youngId = profile.id;
     let cancelled = false;
 
     async function loadWallet() {
       try {
         const [balanceData, activitiesData, catalogData] = await Promise.all([
-          api.civiccoins.getBalance(profile.id),
-          api.civiccoins.suggestActivities(profile.id),
+          api.civiccoins.getBalance(youngId),
+          api.civiccoins.suggestActivities(youngId),
           api.redemptions.getCatalog(),
         ]);
         if (!cancelled) {

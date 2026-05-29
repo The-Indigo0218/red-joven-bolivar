@@ -17,6 +17,8 @@ import type {
   RedemptionCatalogResponse,
   RedemptionResponse,
   SuggestedActivitiesResponse,
+  UploadCvRequest,
+  UploadCvResponse,
   YoungProfileResponse,
 } from '../types';
 import {
@@ -25,6 +27,7 @@ import {
   mockRedemptionCatalog,
   mockSuggestedActivities,
 } from '../data/mockRoute';
+import { extractSkillsFromText } from '../data/skillCatalog';
 import { computeMatchScore } from '../utils/filterOpportunities';
 import { loadFromStorage, saveToStorage, storageKeys } from '../utils/storage';
 
@@ -72,6 +75,13 @@ export const mockClient = {
         createdAt: new Date().toISOString(),
       };
       return delay(created);
+    },
+    async uploadCv(body: UploadCvRequest): Promise<UploadCvResponse> {
+      const skills = extractSkillsFromText(body.cvText);
+      const confidence = skills.length
+        ? Math.min(0.95, Math.round((0.6 + (0.4 * skills.length) / 9) * 100) / 100)
+        : 0.2;
+      return delay({ skills, confidence });
     },
   },
   opportunities: {
