@@ -17,6 +17,16 @@ export interface OpportunitiesQuery {
   barrio?: string;
 }
 
+export interface CreateOpportunityInput {
+  title: string;
+  organization: string;
+  kind: OpportunityKind;
+  requirements: string[];
+  slotsTotal: number;
+  barrio: string;
+  interests: InterestSlug[];
+}
+
 // Contrato GET /opportunities → { items, total }.
 export interface OpportunitiesResponse {
   items: Opportunity[];
@@ -78,6 +88,16 @@ export class OpportunitiesService {
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total };
+  }
+
+  async create(input: CreateOpportunityInput): Promise<Opportunity> {
+    const opportunity = await this.opportunityRepo.save(
+      this.opportunityRepo.create({
+        ...input,
+        slotsAvailable: input.slotsTotal,
+      }),
+    );
+    return opportunity;
   }
 
   // Feed ordenado por afinidad para un joven (MCP_HOOK: AI_MATCHING vía

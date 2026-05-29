@@ -120,6 +120,28 @@ export interface OpportunitiesResponse {
 
 ---
 
+## POST /opportunities
+
+Permite que las instituciones publiquen oferta (empleo, voluntariado o estudio).
+
+```typescript
+// Request body
+export interface CreateOpportunityRequest {
+  title: string;
+  organization: string;
+  kind: OpportunityKind;        // @IsIn(['empleo', 'voluntariado', 'estudio'])
+  requirements: string[];         // @IsArray @IsString({ each: true })
+  slotsTotal: number;             // @IsInt @Min(1)
+  barrio: string;
+  interests: InterestSlug[];      // @IsIn(INTEREST_SLUGS, { each: true })
+}
+
+// Response 201 — slotsAvailable arranca igual a slotsTotal
+export interface CreateOpportunityResponse extends Opportunity {}
+```
+
+---
+
 ## POST /opportunities/:id/interest
 
 Registra el "Me interesa" del joven sobre una oportunidad. Crea un `match` y
@@ -273,6 +295,26 @@ export interface GroupsResponse {
 
 ---
 
+## POST /groups/:id/members
+
+Agrega un joven a un grupo social. Devuelve el grupo con su `memberCount`
+actualizado.
+
+```typescript
+// Path param: id (uuid del grupo)
+
+// Request body
+export interface AddGroupMemberRequest {
+  youngId: string;              // @IsUUID
+}
+
+// Response 201
+export interface AddGroupMemberResponse extends GroupResponse {}
+// 404 si el grupo o el joven no existen; 409 si ya es miembro
+```
+
+---
+
 ## GET /barrios
 
 Catálogo de barrios de Cartagena (datos de referencia) para el selector del
@@ -378,6 +420,18 @@ export interface Skill {
 }
 ```
 
+## GET /skills
+
+Catálogo completo de habilidades, ordenado por nombre visible.
+
+```typescript
+// Response 200
+export interface SkillsCatalogResponse {
+  items: Skill[];
+  total: number;
+}
+```
+
 ## POST /young/cv
 
 Sube el CV en texto y extrae habilidades con IA.
@@ -425,6 +479,51 @@ export interface GrowthRouteResponse {
 ---
 
 # DIFERENCIADOR 2 — Sistema CivicCoins
+
+```typescript
+export type SocialActivityCategory = 'enseñanza' | 'voluntariado' | 'obra';
+
+export interface SocialActivity {
+  id: string;
+  title: string;
+  description: string;
+  pointsReward: number;
+  category: SocialActivityCategory;
+  barrio: string;
+  requiredSkillIds: string[];   // uuid de skills; vacío = abierta a cualquiera
+}
+```
+
+## GET /social-activities
+
+Catálogo de actividades sociales que otorgan CivicCoins.
+
+```typescript
+// Response 200
+export interface SocialActivitiesResponse {
+  items: SocialActivity[];
+  total: number;
+}
+```
+
+## POST /social-activities
+
+Crea una actividad social en el catálogo (Mi Sangre, Alcaldía, aliados).
+
+```typescript
+// Request body
+export interface CreateSocialActivityRequest {
+  title: string;
+  description: string;
+  pointsReward: number;         // @IsInt @Min(1)
+  category: SocialActivityCategory; // @IsIn(['enseñanza', 'voluntariado', 'obra'])
+  barrio: string;
+  requiredSkillIds?: string[];  // @IsOptional @IsUUID({ each: true }); default []
+}
+
+// Response 201
+export interface CreateSocialActivityResponse extends SocialActivity {}
+```
 
 ## GET /civiccoins/:youngId
 
