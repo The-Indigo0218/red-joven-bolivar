@@ -174,9 +174,10 @@ puntos de integración marcados con `// MCP_HOOK: [nombre]`.
 | `young_profiles`    | Perfil del joven: nombre, edad, barrio, nivel educativo, qué busca, disponibilidad. |
 | `interests`         | Catálogo de intereses (tecnología, arte, deporte, emprendimiento, medio ambiente, liderazgo). |
 | `young_interests`   | (Relación N:M) intereses declarados por cada joven. |
-| `opportunities`     | Oportunidades publicadas: nombre, organización, requisitos, cupos, barrio, tipo. |
+| `opportunities`     | Oportunidades publicadas: nombre, organización, requisitos, cupos, barrio, tipo y **modalidad** (presencial / virtual / híbrido). |
 | `opportunity_types` | Catálogo: empleo / voluntariado / estudio. |
 | `matches`           | Vínculo joven ↔ oportunidad (señal "Me interesa" + estado del match). |
+| `waitlist_entries`  | **Lista de espera.** Joven que pidió cupo cuando ya no había. Es la demanda real *insatisfecha* que las instituciones leen para abrir nuevos cupos/cursos. |
 | `groups`            | Grupos sociales por barrio y habilidad (Mi Sangre). |
 | `group_members`     | (Relación) miembros de cada grupo. |
 | `demand_snapshots`  | **Datos agregados** por zona (barrio) + categoría/interés + fecha. Núcleo de DemandModule. |
@@ -345,6 +346,153 @@ suggestSocialActivities(
 
 ---
 
+## DIFERENCIADOR 3 — Lista de espera + Demanda accionable
+
+> "Cuando un joven quiere un cupo y no lo hay, ese 'no' no se tira a la basura:
+> se convierte en una orden de compra para el SENA. Cada joven en lista de espera
+> es una señal de que hace falta abrir un curso más."
+
+Estas funcionalidades **ya están implementadas y mergeadas en el BACK** (`main`)
+y documentadas en `API_CONTRACTS.md`. **Faltan integrarse en el FRONT**: hoy
+`apps/front/src/types/index.ts` calca una versión vieja del contrato, así que los
+campos nuevos llegan en el JSON pero la UI no los usa. Esta sección es la guía
+para esa integración.
+
+### 3.1 Lista de espera (el corazón de este diferenciador)
+
+**Comportamiento del back (ya hecho):**
+
+- `POST /opportunities/:id/interest`:
+  - **Con cupo** → crea el match, descuenta cupo, devuelve `status: 'interesado'`,
+    `waitlisted: false`.
+  - **Sin cupo** → en vez de rechazar, registra al joven en la lista de espera y
+    devuelve `status: 'en-espera'`, `waitlisted: true`, `waitlistPosition`.
+- `GET /opportunities/:id/waitlist` → cola ordenada por antigüedad, con nombre y
+  posición de cada joven (para el panel institucional).
+
+```typescript
+// Respuesta de POST /opportunities/:id/interest (contrato nuevo: InterestResult)
+export interface InterestResult {
+  status: 'interesado' | 'en-espera';
+  waitlisted: boolean;
+  youngId: string;
+  opportunityId: string;
+  score: number;
+  slotsAvailable: number;       // 0 si quedó en espera
+  matchId?: string;             // si quedó 'interesado'
+  waitlistId?: string;          // si quedó 'en-espera'
+  waitlistPosition?: number;    // posición en la cola (1 = primero)
+  createdAt: string;
+}
+```
+
+**Qué debe hacer el FRONT:**
+
+- [ ] Reemplazar `MatchResponse` por `InterestResult` en `types/index.ts` y
+      ampliar `MatchStatus` con `'en-espera'`.
+- [ ] **Quitar el bloqueo de cliente.** Hoy `AppContext.tsx` hace
+      `if (slotsAvailable <= 0) return null` y nunca llama al back. Debe llamar
+      igual y dejar que el back decida match vs. lista de espera.
+- [ ] En `OpportunityCard` / `OpportunitiesFeed`: cuando no hay cupos, el botón
+      pasa de "Sin cupos" (deshabilitado) a **"Unirme a la lista de espera"**.
+      Tras la respuesta `en-espera`, mostrar *"Estás en lista de espera — posición
+      N"*.
+- [ ] Agregar `getWaitlist(id)` al `httpClient`.
+
+### 3.2 Modalidad (presencial / virtual / híbrido)
+
+**Back (ya hecho):** `Opportunity` tiene `modalidad`; `GET /opportunities`
+acepta `?modalidad=`; el `POST` la valida.
+
+```typescript
+export type OpportunityModality = 'presencial' | 'virtual' | 'hibrido';
+// Opportunity ahora incluye: modalidad: OpportunityModality;
+```
+
+**Qué debe hacer el FRONT:**
+
+- [ ] Agregar `modalidad` al tipo `Opportunity` y a `OpportunitiesQuery`.
+- [ ] Mostrar un **badge de modalidad** en `OpportunityCard`.
+- [ ] Agregar filtro por modalidad en el feed (útil para jóvenes que solo pueden
+      estudiar virtual o que no se pueden mover de su barrio).
+
+### 3.3 Rutas: cursos llenos con lista de espera (`isFull`)
+
+**Back (ya hecho):** `findClosingOpportunities` ya **no oculta** los cursos sin
+cupo: los marca con `isFull` y prioriza los que tienen cupo. El titular invita a
+la lista de espera cuando el único curso de cierre está lleno.
+
+```typescript
+export interface ClosingOpportunity {
+  skill: Skill;
+  opportunity: Opportunity;
+  slotsAvailable: number;
+  isFull: boolean;   // true: curso existe pero sin cupos → invita a lista de espera
+}
+```
+
+**Qué debe hacer el FRONT (pantalla RutaPersonal):**
+
+- [ ] Agregar `isFull` al tipo `ClosingOpportunity`.
+- [ ] Si `isFull`, en vez de "0 cupos disponibles" mostrar **"Sin cupos —
+      unirme a la lista de espera"** con CTA que dispare el interés (3.1).
+
+### 3.4 Pantalla 6 — Panel de Demanda Institucional *(nueva)*
+
+> Para SENA, Alcaldía, Mi Sangre, universidades y empresas. Donde las
+> **entidades ven la demanda** y deciden dónde abrir oferta.
+
+Es una evolución del `DemandDashboard` existente, ahora alimentado por **dos
+señales**:
+
+1. **Demanda declarada** (lo que ya había): intereses del perfil vs. cupos.
+2. **Demanda insatisfecha** (nuevo): jóvenes en lista de espera. Es la señal más
+   fuerte porque son jóvenes que *intentaron* anotarse y no pudieron.
+
+**Back (ya hecho):** `GET /demand/dashboard` agrega `waitlistCount` a cada gap.
+
+```typescript
+export interface DemandGap {
+  interest: InterestSlug;
+  barrio: string;
+  youngCount: number;     // jóvenes que lo quieren (declarado)
+  slotsOffered: number;   // cupos disponibles
+  gap: number;            // youngCount - slotsOffered
+  waitlistCount: number;  // jóvenes en lista de espera (insatisfecho real)
+  headline: string;
+}
+```
+
+**Qué debe construir el FRONT:**
+
+- [ ] Agregar `waitlistCount` al tipo `DemandGap`.
+- [ ] En `GapCounter`, además del gap declarado, mostrar un contador destacado de
+      **"N jóvenes en lista de espera"** por (barrio, interés).
+- [ ] **Vista por oportunidad para la entidad:** desde una oportunidad, ver su
+      lista de espera (`GET /opportunities/:id/waitlist`) con los jóvenes en cola.
+      Es el gatillo concreto: *"Este curso del SENA tiene 45 en espera → abrí otro
+      grupo"*.
+- [ ] Pensar la pantalla como **dos caras**: el toggle Joven / Institución (o
+      ruta aparte) que ya insinúa la Visión del documento.
+
+### Resumen de archivos del FRONT a tocar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/types/index.ts` | Realinear con `API_CONTRACTS.md`: `InterestResult`, `OpportunityModality`, `isFull`, `waitlistCount`, `WaitlistResponse`. |
+| `src/api/httpClient.ts` | Query `modalidad`; método `getWaitlist(id)`; tipos de respuesta. |
+| `src/context/AppContext.tsx` | Permitir interés sin cupos; manejar `status: 'en-espera'`. |
+| `src/components/opportunities/OpportunityCard.tsx` | Badge de modalidad + botón "Unirme a la lista de espera". |
+| `src/components/opportunities/OpportunitiesFeed.tsx` | Filtro de modalidad; estado "en lista de espera". |
+| `src/components/route/RutaPersonal.tsx` | Manejo de `isFull` + CTA lista de espera. |
+| `src/components/dashboard/GapCounter.tsx` | Mostrar `waitlistCount`. |
+| (nuevo) panel/vista institucional | Consumir `GET /opportunities/:id/waitlist`. |
+
+> Mientras el front corra con `VITE_USE_MOCK=true`, hay que reflejar también estos
+> campos en los `mock*.ts` para que se vean sin backend.
+
+---
+
 ## Roadmap de implementación (hackathon)
 
 1. **Fase 0 — Estructura y docs** *(actual)*: monorepo + planificación.
@@ -356,3 +504,7 @@ suggestSocialActivities(
 6. **Fase 5 — Diferenciadores**: Motor de Rutas de Crecimiento (SkillsModule +
    RouteModule, pantalla RutaPersonal) y CivicCoins (CivicCoinsModule +
    RedemptionModule + SocialActivityModule, pantalla CivicCoins).
+7. **Fase 6 — Lista de espera + demanda accionable**: BACK ya hecho (modalidad,
+   `waitlist_entries`, `GET /opportunities/:id/waitlist`, `waitlistCount` en el
+   dashboard, `isFull` en rutas). **Pendiente en el FRONT** la integración
+   descrita en *Diferenciador 3* y el Panel de Demanda Institucional (Pantalla 6).
