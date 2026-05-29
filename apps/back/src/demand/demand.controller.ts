@@ -7,6 +7,16 @@ import {
   type ZoneDemand,
 } from './demand.service';
 
+export interface DemandByZoneResponse {
+  items: ZoneDemand[];
+  total: number;
+}
+
+export interface DemandByInterestResponse {
+  items: InterestDemand[];
+  total: number;
+}
+
 @Controller('demand')
 export class DemandController {
   constructor(private readonly demandService: DemandService) {}
@@ -17,15 +27,21 @@ export class DemandController {
     return this.demandService.getDashboard();
   }
 
-  // GET /demand/by-zone
+  // GET /demand/by-zone?interest=
   @Get('by-zone')
-  getByZone(@Query('interest') interest?: InterestSlug): Promise<ZoneDemand[]> {
-    return this.demandService.getByZone(interest);
+  async getByZone(
+    @Query('interest') interest?: InterestSlug,
+  ): Promise<DemandByZoneResponse> {
+    const items = await this.demandService.getByZone(interest);
+    return { items, total: items.length };
   }
 
-  // GET /demand/by-interest
+  // GET /demand/by-interest?barrio=
   @Get('by-interest')
-  getByInterest(@Query('barrio') barrio?: string): Promise<InterestDemand[]> {
-    return this.demandService.getByInterest(barrio);
+  async getByInterest(
+    @Query('barrio') barrio?: string,
+  ): Promise<DemandByInterestResponse> {
+    const items = await this.demandService.getByInterest(barrio);
+    return { items, total: items.length };
   }
 }

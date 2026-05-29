@@ -9,6 +9,7 @@ import { MatchingModule } from './matching/matching.module';
 import { DemandModule } from './demand/demand.module';
 import { GroupsModule } from './groups/groups.module';
 import { AiModule } from './ai/ai.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AiModule } from './ai/ai.module';
     DemandModule,
     GroupsModule,
     AiModule,
+    CommonModule,
   ],
   controllers: [AppController],
   providers: [AppService],

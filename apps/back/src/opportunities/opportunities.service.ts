@@ -1,6 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { MatchingService } from '../matching/matching.service';
+import { YoungService } from '../young/young.service';
 import type { InterestSlug, OpportunityKind } from '../young/young.entity';
-import type { Opportunity } from './opportunity.entity';
+import { Match } from './match.entity';
+import { Opportunity } from './opportunity.entity';
 
 export interface OpportunitiesQuery {
   type?: OpportunityKind;
@@ -8,6 +17,13 @@ export interface OpportunitiesQuery {
   barrio?: string;
 }
 
+// Contrato GET /opportunities → { items, total }.
+export interface OpportunitiesResponse {
+  items: Opportunity[];
+  total: number;
+}
+
+// Contrato POST /opportunities/:id/interest → MatchResponse.
 export interface MatchResult {
   id: string;
   youngId: string;
@@ -18,17 +34,85 @@ export interface MatchResult {
   createdAt: string;
 }
 
-// CRUD de oportunidades (empleos, voluntariados, cursos).
-// Estructura lista para construir — sin lógica de persistencia todavía.
+// CRUD de oportunidades y gestión de cupos. El "Me interesa" crea un match,
+// puntúa por reglas y decrementa cupos.
 @Injectable()
 export class OpportunitiesService {
-  findAll(_query: OpportunitiesQuery): Promise<Opportunity[]> {
-    // TODO: filtrar por tipo, interés y barrio con TypeORM.
-    throw new Error('Not implemented');
+  constructor(
+    @InjectRepository(Opportunity)
+    private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectRepository(Match)
+    private readonly matchRepo: Repository<Match>,
+    private readonly youngService: YoungService,
+    private readonly matchingService: MatchingService,
+  ) {}
+
+  async findAll(query: OpportunitiesQuery): Promise<OpportunitiesResponse> {
+    const qb = this.opportunityRepo.createQueryBuilder('opportunity');
+
+    if (query.type) {
+      qb.andWhere('opportunity.kind = :type', { type: query.type });
+    }
+    if (query.barrio) {
+      qb.andWhere('opportunity.barrio = :barrio', { barrio: query.barrio });
+    }
+    if (query.interest) {
+      // text[]: la oportunidad cubre el interés si está en su arreglo.
+      qb.andWhere(':interest = ANY(opportunity.interests)', {
+        interest: query.interest,
+      });
+    }
+
+    qb.orderBy('opportunity.title', 'ASC');
+
+    const [items, total] = await qb.getManyAndCount();
+    return { items, total };
   }
 
-  expressInterest(_id: string, _youngId: string): Promise<MatchResult> {
-    // TODO: crear match, decrementar cupos y alimentar la demanda.
-    throw new Error('Not implemented');
+  async expressInterest(id: string, youngId: string): Promise<MatchResult> {
+    const opportunity = await this.opportunityRepo.findOne({ where: { id } });
+    if (!opportunity) {
+      throw new NotFoundException(`Oportunidad ${id} no encontrada`);
+    }
+
+    // Valida que el joven exista (lanza NotFound si no).
+    const profile = await this.youngService.findOne(youngId);
+
+    const existing = await this.matchRepo.findOne({
+      where: { youngId, opportunityId: id },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'El joven ya expresó interés en esta oportunidad',
+      );
+    }
+
+    if (opportunity.slotsAvailable <= 0) {
+      throw new ConflictException('No quedan cupos disponibles');
+    }
+
+    const score = this.matchingService.score(profile, opportunity);
+
+    opportunity.slotsAvailable -= 1;
+    await this.opportunityRepo.save(opportunity);
+
+    const match = await this.matchRepo.save(
+      this.matchRepo.create({
+        youngId,
+        opportunityId: id,
+        status: 'interesado',
+        score,
+      }),
+    );
+
+    return {
+      id: match.id,
+      youngId: match.youngId,
+      opportunityId: match.opportunityId,
+      status: match.status,
+      score: match.score,
+      slotsAvailable: opportunity.slotsAvailable,
+      createdAt: match.createdAt.toISOString(),
+    };
   }
 }
