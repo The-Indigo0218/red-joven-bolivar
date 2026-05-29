@@ -1,82 +1,118 @@
 # PITCH.md — Red Joven Bolívar (3 minutos)
 
-> Pitch para Genius Fest 2026 · Fundación Mi Sangre.
-> Duración objetivo: 3:00. Tiempos por sección entre paréntesis.
+> **Estructura:** Problema → Demo (qué resolvemos y cómo) → Lo que nos diferencia → Cierre.
+> ~440 palabras habladas (~3 min). La columna `[ ]` es la coreografía de demo:
+> qué mostrar mientras hablás.
+
+| Bloque | Tiempo |
+|--------|--------|
+| 1. El problema | 0:00 – 0:30 |
+| 2. La demo: cómo lo resolvemos | 0:30 – 2:05 |
+| 3. Lo que nos diferencia | 2:05 – 2:45 |
+| 4. Cierre | 2:45 – 3:00 |
 
 ---
 
-## 1. El problema (30 seg)
+## 1. EL PROBLEMA — *0:30*
 
-> "En Cartagena hay miles de jóvenes con ganas de crecer pero sin conexión con
-> las oportunidades que existen."
+> "En Cartagena, miles de jóvenes de barrios como El Pozón u Olaya Herrera quieren
+> estudiar, trabajar o formarse. Pero pasan dos cosas a la vez:
+>
+> El joven no sabe **qué oportunidad le sirve** ni **qué le falta** para alcanzarla.
+>
+> Y las instituciones —el SENA, la Alcaldía, las universidades— abren cupos **a
+> ciegas**: a veces sobran, casi siempre faltan donde más se necesitan.
+>
+> Talento que busca y no encuentra, frente a oferta que no acierta. **Dos lados
+> desconectados.**"
 
-Y al otro lado del puente hay instituciones —el SENA, las universidades, la
-Alcaldía, las empresas— tomando decisiones **a ciegas**: abren cupos donde
-creen, no donde la juventud realmente los necesita. El resultado son dos
-desperdicios al mismo tiempo: jóvenes sin rumbo y cupos sin jóvenes.
+---
 
-El problema no es solo que falten oportunidades. Es que **nadie está midiendo
-la demanda juvenil real**.
+## 2. LA DEMO: CÓMO LO RESOLVEMOS — *1:35* (en vivo)
 
-## 2. La solución (45 seg)
+> "Así lo resolvemos. Esta es María, 19 años, de El Pozón."
 
-**Red Joven Bolívar** es una red inteligente que conecta a cada joven con
-oportunidades reales de **empleo, voluntariado y estudio**.
+**[Perfil + CV]**
+> "María sube su CV. La IA lo lee —PDF o texto— y **extrae sus habilidades sola**:
+> tiene lógica de programación y Excel."
 
-El joven crea su perfil en un minuto: su barrio, sus intereses —tecnología,
-arte, deporte, emprendimiento, medio ambiente, liderazgo—, su nivel educativo y
-qué busca. A cambio, recibe un feed personalizado de oportunidades filtradas
-para él, y con un toque dice **"Me interesa"**.
+**[Feed de oportunidades]**
+> "Ve oportunidades ordenadas **por afinidad** con su perfil y su barrio, y filtra
+> por modalidad: presencial o virtual."
 
-Sencillo para el joven. Pero por debajo, cada uno de esos toques está
-construyendo algo mucho más grande.
+**[Ruta de Crecimiento — el momento WOW]**
+> "Quiere ser practicante de soporte técnico, pero todavía no clasifica. Otras
+> plataformas le dirían 'no aplicás'. Nosotros le decimos **qué hacer**:
+>
+> *'Te falta Redes. El SENA dicta un curso que la enseña, gratis, en tu zona.
+> ¿Te conectamos?'*
+>
+> Le decimos qué le falta **y dónde conseguirlo gratis.**"
 
-## 3. El diferenciador (45 seg)
+**[Lista de espera]**
+> "¿Y si ese curso está lleno? Antes ese 'no hay cupos' se perdía. Ahora María
+> entra a una **lista de espera** — su intención no se pierde, se convierte en dato."
 
-Las bolsas de empleo te dicen que no clasificás.
-Nosotros te decimos qué hacer para clasificar,
-y te conectamos con quien puede enseñarte.
-Gratis. En tu barrio.
+**[CivicCoins]**
+> "Y mientras se forma, María **aporta**. Enseña lógica de programación a otros
+> chicos del barrio y **gana CivicCoins** —puntos que un coordinador valida.
+> Los **canjea** por útiles escolares, un cupo del SENA o descuentos en
+> universidades aliadas. El que sabe enseña; el que enseña gana; con lo que gana,
+> se sigue formando. Una **economía circular del conocimiento.**"
 
-Cuando un joven marca "Me interesa" en una oportunidad,
-la IA analiza su perfil y genera su Plan de Ruta personal:
-"Para este empleo te falta inglés técnico. El SENA tiene
-un curso en El Pozón con 12 cupos. ¿Te anoto?"
+**[Dashboard institucional]**
+> "Y acá está lo grande: el SENA ve este tablero. *'47 jóvenes en El Pozón esperan
+> un cupo de tecnología.'* Esa lista es la señal para abrir el próximo curso donde
+> de verdad hace falta."
 
-Pero hay más. Cada vez que ese joven enseña lo que sabe,
-hace una obra social o aporta sus habilidades a la comunidad,
-gana CivicCoins — puntos canjeables en insumos escolares,
-descuentos en Platzi, universidades y aliados locales.
+---
 
-Tus habilidades tienen valor.
-Enseñás, ganás, crecés, aportás más.
-El conocimiento circula, la comunidad sube junta
-y nadie se queda atrás por no tener plata.
+## 3. LO QUE NOS DIFERENCIA — *0:40*
 
-Eso no lo hace ninguna plataforma en Cartagena.
-Ni en Colombia.
+> "Tres cosas nos hacen distintos:
+>
+> **Uno — Rutas, no filtros.** La IA no solo recomienda: lee el CV, detecta la
+> brecha de habilidades y la conecta con el curso gratis que la cierra.
+>
+> **Dos — CivicCoins.** Convertimos el conocimiento de cada joven en una moneda
+> que paga su propia formación. Nadie se queda atrás por no tener plata.
+>
+> **Tres — Demanda accionable.** Cada interés y cada lista de espera es un **voto**.
+> Mil jóvenes pidiendo 'sistemas en El Pozón' no es ruido: es una **orden de compra**
+> para el SENA.
+>
+> Todo corre sobre IA con **Google Gemini**, con una red de seguridad por reglas:
+> **si la IA falla, la plataforma sigue funcionando.**"
 
-## 4. La demo (30 seg)
+---
 
-En pantalla van a ver tres momentos:
+## 4. CIERRE — *0:15*
 
-1. **El joven se registra** y declara sus intereses en segundos.
-2. **Su feed de oportunidades** filtrado: empleos, voluntariados y estudios
-   que encajan con su perfil y su barrio.
-3. **El dashboard de demanda** —nuestro corazón—: un mapa de Cartagena con la
-   concentración de jóvenes por barrio, el ranking de intereses más declarados,
-   y el contador que lo dice todo: *"200 jóvenes quieren sistemas, solo 30
-   cupos disponibles"*.
+> "Hoy el talento joven de Cartagena se desperdicia por falta de información.
+> Red Joven Bolívar lo conecta con oportunidades, lo premia por enseñar, y
+> convierte cada 'no hay cupo' en la próxima decisión del Estado.
+>
+> **El talento ya está. Nosotros lo conectamos.**"
 
-## 5. El impacto (30 seg)
+---
 
-Aquí entra **Mi Sangre**. Con esos datos de habilidades y territorio, la
-Fundación no improvisa: forma **grupos sociales juveniles exactamente donde la
-demanda lo pide**, conectando a los jóvenes entre sí y con su comunidad.
+## Notas para clavarlo
 
-Y esto escala más allá de Cartagena: el mismo motor de demanda sirve para todo
-Bolívar, y luego para cualquier región. Cada joven que se suma hace la
-evidencia más fuerte, y la evidencia más fuerte mueve más instituciones.
+- **Frases ancla** (repetir): *"qué te falta y dónde conseguirlo gratis"*,
+  *"economía circular del conocimiento"*, *"cada 'no hay cupo' es una orden de
+  compra para el SENA"*, *"el talento ya está, nosotros lo conectamos"*.
+- **Tres WOW en orden de impacto:** Ruta de Crecimiento → CivicCoins →
+  Lista de espera/Dashboard. Dales los segundos buenos; saltá rápido login y
+  formularios.
+- **Demo lista antes:** María creada con CV cargado, una actividad social para
+  mostrar el canje, y una oportunidad **sin cupos** con gente ya en lista de
+  espera (`npm run seed` + ver `docs/TESTING.md`). DB en Docker, puerto 5433.
+- **Si Gemini está lento o sin red:** mostralo igual; el fallback heurístico da la
+  misma experiencia — y es un punto a favor que conviene mencionar.
+- **Plan B sin backend:** `VITE_USE_MOCK=true` levanta el front con datos mock;
+  la demo no depende del back.
 
-> **Red Joven Bolívar: de intereses individuales a evidencia colectiva que
-> mueve instituciones.**
+### Versión 90 s (si recortan tiempo)
+
+Problema (15s) → Ruta de Crecimiento (35s) → Lista de espera + Dashboard (25s) →
+Cierre (15s). CivicCoins se nombra en una frase y se omite su demo.
