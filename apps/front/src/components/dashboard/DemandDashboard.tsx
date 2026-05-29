@@ -1,14 +1,67 @@
-// Pantalla 3 — DemandDashboard (el diferenciador).
-// Vista para instituciones: mapa de concentración, top intereses y brechas demanda/oferta.
-// Estructura lista para construir — datos de mockDemand (luego GET /demand/dashboard).
-
-import { mockDemand } from '../../data/mockDemand';
-import { DemandMap } from './DemandMap';
+import { useEffect, useState } from 'react';
+import { api } from '../../api';
+import { ApiRequestError } from '../../api';
+import type { DemandDashboardResponse } from '../../types';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { DemandChart } from './DemandChart';
+import { DemandMap } from './DemandMap';
 import { GapCounter } from './GapCounter';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) return error.message;
+  if (error instanceof Error) return error.message;
+  return 'No pudimos cargar el tablero de demanda.';
+}
+
 export function DemandDashboard() {
-  const { byZone, topInterests, gaps } = mockDemand;
+  const [data, setData] = useState<DemandDashboardResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      try {
+        const dashboard = await api.demand.getDashboard();
+        if (!cancelled) {
+          setData(dashboard);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(getErrorMessage(err));
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const retry = () => {
+    setIsLoading(true);
+    setError(null);
+    void api.demand
+      .getDashboard()
+      .then((dashboard) => {
+        setData(dashboard);
+      })
+      .catch((err) => {
+        setError(getErrorMessage(err));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6 sm:space-y-8">
@@ -20,12 +73,21 @@ export function DemandDashboard() {
         </p>
       </header>
 
-      <GapCounter gaps={gaps} />
+      {isLoading && <LoadingSpinner label="Cargando tablero de demanda..." />}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <DemandMap zones={byZone} />
-        <DemandChart interests={topInterests} />
-      </div>
+      {!isLoading && error && (
+        <ErrorMessage message={error} onRetry={retry} />
+      )}
+
+      {!isLoading && !error && data && (
+        <>
+          <GapCounter gaps={data.gaps} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <DemandMap zones={data.byZone} />
+            <DemandChart interests={data.topInterests} />
+          </div>
+        </>
+      )}
     </section>
   );
 }

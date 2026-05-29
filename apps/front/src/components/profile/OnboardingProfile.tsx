@@ -6,7 +6,7 @@ import {
   INTEREST_OPTIONS,
   SEEKING_OPTIONS,
 } from '../../constants/formOptions';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../hooks/useApp';
 import type {
   Availability,
   CreateYoungProfileRequest,
@@ -91,7 +91,7 @@ function toggleItem<T extends string>(list: T[], item: T): T[] {
 }
 
 export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
-  const { profile, saveProfile, clearProfile } = useApp();
+  const { profile, saveProfile, clearProfile, isSavingProfile } = useApp();
   const [form, setForm] = useState<FormState>(() =>
     profile
       ? {
@@ -113,7 +113,7 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   }
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const nextErrors = validateForm(form);
     setErrors(nextErrors);
@@ -129,9 +129,13 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
       availability: form.availability,
     };
 
-    saveProfile(request);
-    setSubmitted(true);
-    onComplete?.();
+    try {
+      await saveProfile(request);
+      setSubmitted(true);
+      onComplete?.();
+    } catch {
+      setErrors({ name: 'No pudimos guardar tu perfil. Intenta de nuevo.' });
+    }
   }
 
   const fieldClass =
@@ -395,10 +399,11 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             type="submit"
-            className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold"
+            disabled={isSavingProfile}
+            className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold disabled:opacity-60"
             style={{ backgroundColor: 'var(--rjb-primary)', color: 'var(--rjb-bg)' }}
           >
-            Guardar perfil
+            {isSavingProfile ? 'Guardando...' : 'Guardar perfil'}
           </button>
           {profile && (
             <button

@@ -1,59 +1,91 @@
 import {
-  createContext,
   useCallback,
-  useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
-import { mockOpportunities } from '../data/mockOpportunities';
+import { api } from '../api';
+import { ApiRequestError } from '../api';
 import type {
   CreateYoungProfileRequest,
   MatchResponse,
   Opportunity,
   YoungProfileResponse,
 } from '../types';
-import { computeMatchScore } from '../utils/filterOpportunities';
 import { loadFromStorage, saveToStorage, storageKeys } from '../utils/storage';
+import { AppContext } from './app-context';
 
-interface AppContextValue {
-  profile: YoungProfileResponse | null;
-  opportunities: Opportunity[];
-  matches: MatchResponse[];
-  saveProfile: (request: CreateYoungProfileRequest) => YoungProfileResponse;
-  clearProfile: () => void;
-  expressInterest: (opportunityId: string) => MatchResponse | null;
-  isInterestedIn: (opportunityId: string) => boolean;
-}
-
-const AppContext = createContext<AppContextValue | null>(null);
-
-function createProfileId(): string {
-  return crypto.randomUUID();
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiRequestError) return error.message;
+  if (error instanceof Error) return error.message;
+  return fallback;
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<YoungProfileResponse | null>(() =>
     loadFromStorage<YoungProfileResponse | null>(storageKeys.profile, null),
   );
-
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(() =>
-    loadFromStorage<Opportunity[]>(storageKeys.opportunities, mockOpportunities),
-  );
-
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [matches, setMatches] = useState<MatchResponse[]>(() =>
-    loadFromStorage<MatchResponse[]>(storageKeys.matches, []),
+    loadFromStorage(storageKeys.matches, []),
   );
+  const [isLoadingOpportunities, setIsLoadingOpportunities] = useState(true);
+  const [opportunitiesError, setOpportunitiesError] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [interestLoadingId, setInterestLoadingId] = useState<string | null>(null);
 
-  const saveProfile = useCallback((request: CreateYoungProfileRequest) => {
-    const created: YoungProfileResponse = {
-      id: createProfileId(),
-      ...request,
-      createdAt: new Date().toISOString(),
+  const refreshOpportunities = useCallback(async () => {
+    setIsLoadingOpportunities(true);
+    try {
+      const response = await api.opportunities.list({});
+      setOpportunities(response.items);
+      setOpportunitiesError(null);
+    } catch (error) {
+      setOpportunitiesError(getErrorMessage(error, 'No pudimos cargar las oportunidades.'));
+    } finally {
+      setIsLoadingOpportunities(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await api.opportunities.list({});
+        if (!cancelled) {
+          setOpportunities(response.items);
+          setOpportunitiesError(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setOpportunitiesError(
+            getErrorMessage(error, 'No pudimos cargar las oportunidades.'),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingOpportunities(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-    setProfile(created);
-    saveToStorage(storageKeys.profile, created);
-    return created;
+  }, []);
+
+  const saveProfile = useCallback(async (request: CreateYoungProfileRequest) => {
+    setIsSavingProfile(true);
+    try {
+      const created = await api.young.createProfile(request);
+      setProfile(created);
+      saveToStorage(storageKeys.profile, created);
+      return created;
+    } finally {
+      setIsSavingProfile(false);
+    }
   }, []);
 
   const clearProfile = useCallback(() => {
@@ -62,46 +94,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isInterestedIn = useCallback(
-    (opportunityId: string) =>
-      matches.some((m) => m.opportunityId === opportunityId),
+    (opportunityId: string) => matches.some((m) => m.opportunityId === opportunityId),
     [matches],
   );
 
   const expressInterest = useCallback(
-    (opportunityId: string): MatchResponse | null => {
+    async (opportunityId: string): Promise<MatchResponse | null> => {
       if (!profile) return null;
       if (isInterestedIn(opportunityId)) return null;
 
       const opportunity = opportunities.find((o) => o.id === opportunityId);
       if (!opportunity || opportunity.slotsAvailable <= 0) return null;
 
-      const slotsAvailable = opportunity.slotsAvailable - 1;
+      setInterestLoadingId(opportunityId);
+      try {
+        const match = await api.opportunities.expressInterest(opportunityId, {
+          youngId: profile.id,
+        });
 
-      setOpportunities((prev) => {
-        const next = prev.map((o) =>
-          o.id === opportunityId ? { ...o, slotsAvailable } : o,
+        setOpportunities((prev) =>
+          prev.map((o) =>
+            o.id === opportunityId ? { ...o, slotsAvailable: match.slotsAvailable } : o,
+          ),
         );
-        saveToStorage(storageKeys.opportunities, next);
-        return next;
-      });
 
-      const match: MatchResponse = {
-        id: createProfileId(),
-        youngId: profile.id,
-        opportunityId,
-        status: 'interesado',
-        score: computeMatchScore(opportunity, profile),
-        slotsAvailable,
-        createdAt: new Date().toISOString(),
-      };
+        setMatches((prev) => {
+          const next = [...prev, match];
+          saveToStorage(storageKeys.matches, next);
+          return next;
+        });
 
-      setMatches((prev) => {
-        const next = [...prev, match];
-        saveToStorage(storageKeys.matches, next);
-        return next;
-      });
-
-      return match;
+        return match;
+      } catch {
+        return null;
+      } finally {
+        setInterestLoadingId(null);
+      }
     },
     [profile, opportunities, isInterestedIn],
   );
@@ -111,29 +139,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       profile,
       opportunities,
       matches,
+      isLoadingOpportunities,
+      opportunitiesError,
+      isSavingProfile,
+      interestLoadingId,
       saveProfile,
       clearProfile,
       expressInterest,
       isInterestedIn,
+      refreshOpportunities,
     }),
     [
       profile,
       opportunities,
       matches,
+      isLoadingOpportunities,
+      opportunitiesError,
+      isSavingProfile,
+      interestLoadingId,
       saveProfile,
       clearProfile,
       expressInterest,
       isInterestedIn,
+      refreshOpportunities,
     ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
-
-export function useApp(): AppContextValue {
-  const ctx = useContext(AppContext);
-  if (!ctx) {
-    throw new Error('useApp debe usarse dentro de AppProvider');
-  }
-  return ctx;
 }

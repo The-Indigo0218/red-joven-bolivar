@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { OpportunityKind } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../hooks/useApp';
 import { filterOpportunities } from '../../utils/filterOpportunities';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { OpportunityCard } from './OpportunityCard';
 
 interface Tab {
@@ -20,23 +22,32 @@ interface OpportunitiesFeedProps {
 }
 
 export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
-  const { profile, opportunities, expressInterest, isInterestedIn } = useApp();
+  const {
+    profile,
+    opportunities,
+    expressInterest,
+    isInterestedIn,
+    isLoadingOpportunities,
+    opportunitiesError,
+    interestLoadingId,
+    refreshOpportunities,
+  } = useApp();
   const [activeTab, setActiveTab] = useState<OpportunityKind>('empleo');
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const items = filterOpportunities(opportunities, activeTab, profile);
 
-  function handleInterest(id: string) {
+  async function handleInterest(id: string) {
     if (!profile) {
-      setFeedback('Completá tu perfil primero para expresar interés.');
+      setFeedback('Completa tu perfil primero para expresar interes.');
       return;
     }
 
-    const match = expressInterest(id);
+    const match = await expressInterest(id);
     if (match) {
-      setFeedback('¡Interés registrado! Tu señal de demanda quedó guardada.');
+      setFeedback('Interes registrado! Tu senal de demanda quedo guardada.');
     } else if (isInterestedIn(id)) {
-      setFeedback('Ya registraste interés en esta oportunidad.');
+      setFeedback('Ya registraste interes en esta oportunidad.');
     } else {
       setFeedback('No hay cupos disponibles en esta oportunidad.');
     }
@@ -51,7 +62,7 @@ export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
       {profile ? (
         <p className="mb-6 text-sm" style={{ color: 'var(--rjb-text-muted)' }}>
           Filtradas para <strong>{profile.name}</strong> en{' '}
-          <strong>{profile.barrio}</strong> según tus intereses.
+          <strong>{profile.barrio}</strong> segun tus intereses.
         </p>
       ) : (
         <div
@@ -62,7 +73,7 @@ export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
           }}
         >
           <p className="mb-2">
-            Todavía no tenés perfil. Completalo para ver oportunidades personalizadas.
+            Todavia no tenes perfil. Completalo para ver oportunidades personalizadas.
           </p>
           {onGoToProfile && (
             <button
@@ -106,17 +117,27 @@ export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
         })}
       </div>
 
-      {!profile ? (
+      {isLoadingOpportunities && <LoadingSpinner label="Cargando oportunidades..." />}
+
+      {!isLoadingOpportunities && opportunitiesError && (
+        <ErrorMessage message={opportunitiesError} onRetry={() => void refreshOpportunities()} />
+      )}
+
+      {!isLoadingOpportunities && !opportunitiesError && !profile && (
         <EmptyState
-          title="Sin perfil todavía"
-          description="Creá tu perfil para filtrar oportunidades por barrio e intereses."
+          title="Sin perfil todavia"
+          description="Crea tu perfil para filtrar oportunidades por barrio e intereses."
         />
-      ) : items.length === 0 ? (
+      )}
+
+      {!isLoadingOpportunities && !opportunitiesError && profile && items.length === 0 && (
         <EmptyState
           title="No hay oportunidades que coincidan"
-          description={`No encontramos ${TABS.find((t) => t.kind === activeTab)?.label.toLowerCase()} en ${profile.barrio} que coincidan con tus intereses. Probá otra pestaña o actualizá tu perfil.`}
+          description={`No encontramos ${TABS.find((t) => t.kind === activeTab)?.label.toLowerCase()} en ${profile.barrio} que coincidan con tus intereses. Proba otra pestana o actualiza tu perfil.`}
         />
-      ) : (
+      )}
+
+      {!isLoadingOpportunities && !opportunitiesError && profile && items.length > 0 && (
         <div className="grid gap-4">
           {items.map((opp) => (
             <OpportunityCard
@@ -124,7 +145,8 @@ export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
               opportunity={opp}
               interested={isInterestedIn(opp.id)}
               disabled={!profile || opp.slotsAvailable <= 0}
-              onInterest={handleInterest}
+              loading={interestLoadingId === opp.id}
+              onInterest={(id) => void handleInterest(id)}
             />
           ))}
         </div>
