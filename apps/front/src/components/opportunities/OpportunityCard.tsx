@@ -4,6 +4,7 @@ interface OpportunityCardProps {
   opportunity: Opportunity;
   interested?: boolean;
   disabled?: boolean;
+  loading?: boolean;
   onInterest?: (id: string) => void;
 }
 
@@ -11,12 +12,14 @@ export function OpportunityCard({
   opportunity,
   interested = false,
   disabled = false,
+  loading = false,
   onInterest,
 }: OpportunityCardProps) {
   const { id, title, organization, requirements, slotsAvailable, slotsTotal, barrio } =
     opportunity;
 
   const noSlots = slotsAvailable <= 0;
+  const isDisabled = disabled || interested || noSlots || loading;
 
   return (
     <article
@@ -55,14 +58,20 @@ export function OpportunityCard({
         <button
           type="button"
           onClick={() => onInterest?.(id)}
-          disabled={disabled || interested || noSlots}
+          disabled={isDisabled}
           className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             backgroundColor: interested ? 'var(--rjb-success)' : 'var(--rjb-primary)',
             color: 'var(--rjb-bg)',
           }}
         >
-          {interested ? 'Interés registrado' : noSlots ? 'Sin cupos' : 'Me interesa'}
+          {loading
+            ? 'Enviando...'
+            : interested
+              ? 'Interes registrado'
+              : noSlots
+                ? 'Sin cupos'
+                : 'Me interesa'}
         </button>
       </footer>
     </article>
