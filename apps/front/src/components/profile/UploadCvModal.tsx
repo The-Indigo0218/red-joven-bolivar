@@ -58,6 +58,11 @@ export function UploadCvModal({
   if (!open) return null;
 
   async function handleFile(file: File) {
+    if (!youngId) {
+      setError('Guarda tu perfil antes de subir el CV.');
+      return;
+    }
+
     setError(null);
     setFileName(file.name);
     setStep('processing');

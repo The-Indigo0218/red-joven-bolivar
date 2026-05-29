@@ -468,6 +468,8 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
                 setForm(INITIAL_FORM);
                 setSubmitted(false);
                 setErrors({});
+                setCvResult(null);
+                setCvModalOpen(false);
               }}
               className="px-4 py-3 rounded-lg text-sm font-semibold border"
               style={{

@@ -44,13 +44,19 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
       return;
     }
 
-    const match = await expressInterest(id);
-    if (match) {
-      setFeedback('Interes registrado! Tu senal de demanda quedo guardada.');
-    } else if (isInterestedIn(id)) {
-      setFeedback('Ya registraste interes en esta oportunidad.');
-    } else {
-      setFeedback('No hay cupos disponibles en esta oportunidad.');
+    try {
+      const match = await expressInterest(id);
+      if (match) {
+        setFeedback('Interes registrado! Tu senal de demanda quedo guardada.');
+      } else if (isInterestedIn(id)) {
+        setFeedback('Ya registraste interes en esta oportunidad.');
+      } else {
+        setFeedback('No hay cupos disponibles en esta oportunidad.');
+      }
+    } catch (err) {
+      setFeedback(
+        err instanceof Error ? err.message : 'No pudimos registrar tu interes. Intenta de nuevo.',
+      );
     }
 
     window.setTimeout(() => setFeedback(null), 4000);

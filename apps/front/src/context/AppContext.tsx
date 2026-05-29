@@ -16,10 +16,23 @@ import type {
 import { loadFromStorage, saveToStorage, storageKeys } from '../utils/storage';
 import { AppContext } from './app-context';
 
+function loadInitialMatches(profile: YoungProfileResponse | null): MatchResponse[] {
+  const stored = loadFromStorage<MatchResponse[]>(storageKeys.matches, []);
+  if (!profile) return [];
+  return stored.filter((m) => m.youngId === profile.id);
+}
+
 function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof ApiRequestError) return error.message;
+  if (error instanceof ApiRequestError) {
+    return error.message || fallback;
+  }
   if (error instanceof Error) return error.message;
   return fallback;
+}
+
+function clearStoredMatches(setMatches: (matches: MatchResponse[]) => void): void {
+  setMatches([]);
+  localStorage.removeItem(storageKeys.matches);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -28,7 +41,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [matches, setMatches] = useState<MatchResponse[]>(() =>
-    loadFromStorage(storageKeys.matches, []),
+    loadInitialMatches(loadFromStorage<YoungProfileResponse | null>(storageKeys.profile, null)),
   );
   const [isLoadingOpportunities, setIsLoadingOpportunities] = useState(true);
   const [opportunitiesError, setOpportunitiesError] = useState<string | null>(null);
@@ -80,22 +93,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsSavingProfile(true);
     try {
       const created = await api.young.createProfile(request);
+      if (profile?.id && profile.id !== created.id) {
+        clearStoredMatches(setMatches);
+      }
       setProfile(created);
       saveToStorage(storageKeys.profile, created);
       return created;
     } finally {
       setIsSavingProfile(false);
     }
-  }, []);
+  }, [profile?.id]);
 
   const clearProfile = useCallback(() => {
     setProfile(null);
+    clearStoredMatches(setMatches);
     localStorage.removeItem(storageKeys.profile);
   }, []);
 
   const isInterestedIn = useCallback(
-    (opportunityId: string) => matches.some((m) => m.opportunityId === opportunityId),
-    [matches],
+    (opportunityId: string) => {
+      if (!profile) return false;
+      return matches.some(
+        (m) => m.youngId === profile.id && m.opportunityId === opportunityId,
+      );
+    },
+    [matches, profile],
   );
 
   const expressInterest = useCallback(
@@ -125,8 +147,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
 
         return match;
-      } catch {
-        return null;
       } finally {
         setInterestLoadingId(null);
       }

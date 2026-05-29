@@ -1,5 +1,5 @@
 import { API_BASE_URL } from './config';
-import { ApiRequestError } from './errors';
+import { ApiRequestError, messageFromApiBody } from './errors';
 import type {
   CivicCoinsBalanceResponse,
   CreateRedemptionRequest,
@@ -18,6 +18,7 @@ import type {
   UploadCvRequest,
   UploadCvResponse,
   YoungProfileResponse,
+  ApiError,
 } from '../types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -32,7 +33,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // respuesta no JSON
     }
-    throw new ApiRequestError(`Error ${response.status} en ${path}`, response.status, body);
+    throw new ApiRequestError(
+      messageFromApiBody(body, `Error ${response.status} en ${path}`),
+      response.status,
+      body as ApiError | null,
+    );
   }
   return response.json() as Promise<T>;
 }
