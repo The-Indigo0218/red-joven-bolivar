@@ -175,3 +175,107 @@ Grupos sociales de Mi Sangre, por barrio y habilidad.
 
 > El campo `gap` es lo que alimenta el contador
 > *"X jóvenes quieren estudiar sistemas — solo Y cupos disponibles"*.
+
+---
+
+## Entidades — Diferenciador 1: Motor de Rutas de Crecimiento
+
+### Skill (`skills`)
+Catálogo de habilidades.
+
+| Campo    | Tipo   | Notas              |
+|----------|--------|--------------------|
+| id       | uuid   | PK                 |
+| slug     | string | identificador      |
+| label    | string | nombre visible     |
+| category | string | técnica/blanda/digital |
+
+### YoungSkill (`young_skills`)
+Habilidades de cada joven.
+
+| Campo    | Tipo   | Notas                         |
+|----------|--------|-------------------------------|
+| id       | uuid   | PK                            |
+| youngId  | uuid   | FK → young_profiles           |
+| skillId  | uuid   | FK → skills                   |
+| source   | string | 'cv' \| 'declarado'           |
+| level    | string | básico/intermedio/avanzado    |
+
+### OpportunitySkill (`opportunity_skills`)
+Habilidades requeridas por cada oportunidad.
+
+| Campo         | Tipo    | Notas              |
+|---------------|---------|--------------------|
+| id            | uuid    | PK                 |
+| opportunityId | uuid    | FK → opportunities |
+| skillId       | uuid    | FK → skills        |
+| required      | boolean | obligatoria        |
+
+### GrowthRoute (`growth_routes`)
+Plan de Ruta personal del joven hacia una oportunidad.
+
+| Campo                 | Tipo        | Notas                  |
+|-----------------------|-------------|------------------------|
+| id                    | uuid        | PK                     |
+| youngId               | uuid        | FK → young_profiles    |
+| targetOpportunityId   | uuid        | FK → opportunities     |
+| affinityScore         | number      | 0..1                   |
+| missingSkillIds       | uuid[]      | skills que faltan      |
+| closingOpportunityIds | uuid[]      | oportunidades de cierre|
+| headline              | string      | frase generada por IA  |
+| generatedAt           | timestamptz |                        |
+
+---
+
+## Entidades — Diferenciador 2: Sistema CivicCoins
+
+### SocialActivity (`social_activities`)
+Catálogo de actividades que generan CivicCoins.
+
+| Campo          | Tipo    | Notas                     |
+|----------------|---------|---------------------------|
+| id             | uuid    | PK                        |
+| title          | string  |                           |
+| description    | string  |                           |
+| pointsReward   | number  | CivicCoins que otorga     |
+| category       | string  | enseñanza/voluntariado/obra |
+| barrio         | string  |                           |
+| requiredSkills | uuid[]  | habilidades necesarias    |
+
+### CivicCoinTransaction (`civiccoins_transactions`)
+Registro inmutable de cada movimiento de puntos.
+
+| Campo       | Tipo        | Notas                      |
+|-------------|-------------|----------------------------|
+| id          | uuid        | PK                         |
+| youngId     | uuid        | FK → young_profiles        |
+| type        | string      | 'earned' \| 'redeemed'     |
+| amount      | number      | puntos                     |
+| activityId  | uuid        | FK → social_activities (nullable) |
+| validatorId | uuid        | FK → young_profiles (validador) |
+| description | string      |                            |
+| createdAt   | timestamptz |                            |
+
+### RedemptionCatalog (`redemption_catalog`)
+Aliados donde se canjean puntos.
+
+| Campo       | Tipo   | Notas                              |
+|-------------|--------|------------------------------------|
+| id          | uuid   | PK                                 |
+| partner     | string | Platzi, SENA, universidad, tienda  |
+| description | string |                                    |
+| pointsCost  | number | CivicCoins necesarios              |
+| category    | string | insumos/educacion/universidad/otro |
+| discount    | number | porcentaje de descuento (nullable) |
+
+### Redemption (`redemptions`)
+Canjes realizados por jóvenes.
+
+| Campo         | Tipo        | Notas                    |
+|---------------|-------------|--------------------------|
+| id            | uuid        | PK                       |
+| youngId       | uuid        | FK → young_profiles      |
+| catalogItemId | uuid        | FK → redemption_catalog  |
+| pointsSpent   | number      |                          |
+| voucherCode   | string      | código único de canje    |
+| redeemedAt    | timestamptz |                          |

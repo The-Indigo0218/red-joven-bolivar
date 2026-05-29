@@ -273,6 +273,175 @@ export interface GroupsResponse {
 
 ---
 
+# DIFERENCIADOR 1 — Motor de Rutas de Crecimiento
+
+```typescript
+// Habilidad del catálogo (ver entidad Skill en ENTITIES.md).
+export interface Skill {
+  id: string;
+  slug: string;
+  label: string;
+  category: 'tecnica' | 'blanda' | 'digital';
+}
+```
+
+## POST /young/cv
+
+Sube el CV en texto y extrae habilidades con IA.
+
+```typescript
+// Request body
+export interface UploadCvRequest {
+  cvText: string;
+}
+
+// Response 200
+export interface UploadCvResponse {
+  skills: Skill[];
+  confidence: number; // 0..1
+}
+// MCP_HOOK: CV_PARSING
+```
+
+## GET /opportunities/:id/route?youngId=
+
+Genera el Plan de Ruta personal del joven hacia una oportunidad.
+
+```typescript
+// Path param: id (uuid de la oportunidad). Query param: youngId
+
+export interface ClosingOpportunity {
+  skill: Skill;
+  opportunity: Opportunity;
+  slotsAvailable: number;
+}
+
+// Response 200
+export interface GrowthRouteResponse {
+  opportunityId: string;
+  youngId: string;
+  affinityScore: number; // 0..100
+  matchingSkills: Skill[];
+  missingSkills: Skill[];
+  closingOpportunities: ClosingOpportunity[];
+  headline: string;
+}
+// MCP_HOOK: GAP_ANALYSIS + ROUTE_GENERATION
+```
+
+---
+
+# DIFERENCIADOR 2 — Sistema CivicCoins
+
+## GET /civiccoins/:youngId
+
+Saldo e historial de CivicCoins del joven.
+
+```typescript
+export interface CivicCoinHistoryItem {
+  id: string;
+  type: 'earned' | 'redeemed';
+  amount: number;
+  description: string;
+  validatedBy?: string;
+  createdAt: string;
+}
+
+// Response 200
+export interface CivicCoinsBalanceResponse {
+  youngId: string;
+  balance: number;
+  history: CivicCoinHistoryItem[];
+}
+```
+
+## POST /civiccoins/earn
+
+Acredita puntos por una actividad social validada.
+
+```typescript
+// Request body
+export interface EarnCivicCoinsRequest {
+  youngId: string;
+  activityId: string;
+  validatorId: string;
+}
+
+// Response 201
+export interface EarnCivicCoinsResponse {
+  transactionId: string;
+  pointsEarned: number;
+  newBalance: number;
+  activity: string;
+}
+```
+
+## GET /civiccoins/activities?youngId=
+
+Lista de actividades sociales sugeridas por IA para ese joven.
+
+```typescript
+export interface SuggestedActivity {
+  id: string;
+  title: string;
+  description: string;
+  pointsReward: number;
+  category: string;
+  barrio: string;
+  requiredSkills: Skill[];
+  affinityScore: number; // 0..100
+}
+
+// Response 200
+export interface SuggestedActivitiesResponse {
+  items: SuggestedActivity[];
+}
+// MCP_HOOK: SOCIAL_MATCHING
+```
+
+## GET /redemptions/catalog
+
+Catálogo de aliados donde canjear CivicCoins.
+
+```typescript
+export interface RedemptionCatalogItem {
+  id: string;
+  partner: string;
+  description: string;
+  pointsCost: number;
+  category: 'insumos' | 'educacion' | 'universidad' | 'otro';
+  discount?: number; // porcentaje
+}
+
+// Response 200
+export interface RedemptionCatalogResponse {
+  items: RedemptionCatalogItem[];
+}
+```
+
+## POST /redemptions
+
+Canjea puntos por un ítem del catálogo.
+
+```typescript
+// Request body
+export interface CreateRedemptionRequest {
+  youngId: string;
+  catalogItemId: string;
+}
+
+// Response 201
+export interface RedemptionResponse {
+  redemptionId: string;
+  partner: string;
+  pointsSpent: number;
+  newBalance: number;
+  voucherCode: string;
+}
+```
+
+---
+
 ## Notas de integración con IA
 
 Los endpoints de matching y predicción de demanda son los puntos donde el back
@@ -284,3 +453,14 @@ delega en `AIModule`. El front **nunca** llama a la IA directamente.
   `// MCP_HOOK: DEMAND_PREDICTION` (`predictDemandByZone()`).
 - La formación de grupos puede sugerirse con `suggestGroupFormation()` antes de
   un `POST /groups`.
+
+**Diferenciador 1 — Motor de Rutas de Crecimiento**
+
+- `POST /young/cv` → `// MCP_HOOK: CV_PARSING` (`extractSkillsFromCV()`).
+- `GET /opportunities/:id/route` → `// MCP_HOOK: GAP_ANALYSIS` +
+  `// MCP_HOOK: ROUTE_GENERATION` (`analyzeSkillGap()` + `generateGrowthRoute()`).
+
+**Diferenciador 2 — CivicCoins**
+
+- `GET /civiccoins/activities` → `// MCP_HOOK: SOCIAL_MATCHING`
+  (`suggestSocialActivities()`).

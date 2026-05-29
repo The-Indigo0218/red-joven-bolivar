@@ -180,10 +180,168 @@ puntos de integración marcados con `// MCP_HOOK: [nombre]`.
 | `groups`            | Grupos sociales por barrio y habilidad (Mi Sangre). |
 | `group_members`     | (Relación) miembros de cada grupo. |
 | `demand_snapshots`  | **Datos agregados** por zona (barrio) + categoría/interés + fecha. Núcleo de DemandModule. |
+| `skills`            | Catálogo de habilidades (técnica/blanda/digital). *(Diferenciador 1)* |
+| `young_skills`      | Habilidades de cada joven (origen CV o declarado + nivel). *(Diferenciador 1)* |
+| `opportunity_skills`| Habilidades requeridas por cada oportunidad (obligatoria o no). *(Diferenciador 1)* |
+| `growth_routes`     | Plan de Ruta personal: afinidad, habilidades faltantes y oportunidades de cierre. *(Diferenciador 1)* |
+| `social_activities` | Catálogo de actividades sociales que otorgan CivicCoins. *(Diferenciador 2)* |
+| `civiccoins_transactions` | Registro inmutable de puntos ganados/canjeados. *(Diferenciador 2)* |
+| `redemption_catalog`| Aliados y descuentos donde canjear CivicCoins. *(Diferenciador 2)* |
+| `redemptions`       | Canjes realizados por jóvenes (voucher + puntos gastados). *(Diferenciador 2)* |
 
 > El detalle de columnas y relaciones está en
 > [`ENTITIES.md`](ENTITIES.md) (entidades de negocio) y en
 > [`API_CONTRACTS.md`](API_CONTRACTS.md) (shapes que viajan por la API).
+
+---
+
+## DIFERENCIADOR 1 — Motor de Rutas de Crecimiento
+
+> "La IA no solo filtra oportunidades según el CV del joven — le dice
+> exactamente qué le falta para conseguir ese empleo y lo conecta con el curso
+> del SENA o taller de Mi Sangre que cierra esa brecha. En Cartagena. Gratis."
+
+No basta con decirle al joven que *no* clasifica. El motor le dice **qué hacer
+para clasificar** y lo conecta con quién se lo enseña, gratis y en su barrio.
+
+### Flujo
+
+1. El joven sube su CV o llena su perfil de habilidades.
+2. La IA analiza sus habilidades actuales (extracción de CV).
+3. El joven selecciona una oportunidad que le interesa.
+4. La IA compara su perfil vs. los requisitos de la oportunidad.
+5. La IA genera un **Plan de Ruta** personalizado:
+   - "Para este empleo te falta inglés técnico y Excel avanzado"
+   - "El SENA tiene inglés técnico en El Pozón con 12 cupos"
+   - "¿Te conecto?"
+
+### Tres capas
+
+- **Capa 1 — Matching inteligente:** CV vs. oportunidad, con un score de afinidad.
+- **Capa 2 — Gap Analysis personal:** las habilidades que faltan exactamente.
+- **Capa 3 — Ruta de cierre:** el curso/taller disponible en Cartagena que da
+  esa habilidad (SENA y Mi Sangre).
+
+### Cambios en el perfil del joven
+
+El perfil incorpora dos dimensiones nuevas de habilidades:
+
+- **Habilidades actuales** — extraídas del CV o declaradas manualmente.
+- **Habilidades objetivo** — inferidas de las oportunidades marcadas como
+  "Me interesa".
+
+### Nueva pantalla — Pantalla 4: RutaPersonal *(solo documentación)*
+
+- **Score de afinidad** del joven con la oportunidad (0–100%).
+- Lista de habilidades que **tiene** ✓.
+- Lista de habilidades que le **faltan** ✗.
+- Para cada habilidad faltante: la **oportunidad concreta** (curso SENA, taller
+  Mi Sangre) que la desarrolla.
+- Botón **"Iniciar mi ruta"** que registra el match y conecta con las
+  oportunidades de cierre.
+
+### Nuevos módulos en el BACK
+
+| Módulo            | Responsabilidad |
+|-------------------|-----------------|
+| **SkillsModule**  | Catálogo de habilidades, extracción de CV y habilidades por joven. |
+| **RouteModule**   | Genera el Plan de Ruta personal combinando gap analysis + oferta disponible. |
+
+### AIModule — nuevas interfaces
+
+```typescript
+// MCP_HOOK: CV_PARSING
+extractSkillsFromCV(cvText: string): Promise<Skill[]>;
+
+// MCP_HOOK: GAP_ANALYSIS
+analyzeSkillGap(
+  youngSkills: Skill[],
+  opportunityRequirements: Skill[],
+): Promise<GapAnalysisResult>;
+
+// MCP_HOOK: ROUTE_GENERATION
+generateGrowthRoute(
+  gap: GapAnalysisResult,
+  availableOpportunities: Opportunity[],
+): Promise<GrowthRoute>;
+```
+
+---
+
+## DIFERENCIADOR 2 — Sistema de Puntos por Impacto Social (CivicCoins)
+
+> "Tus habilidades tienen valor. Enseñás lo que sabés, ganás puntos, y esos
+> puntos te pagan la próxima clase. El conocimiento circula, la comunidad crece
+> y nadie se queda atrás por no tener plata."
+
+### Cómo gana CivicCoins el joven
+
+- Enseñando una habilidad a otro joven.
+- Participando en una obra de carácter social.
+- Completando un voluntariado verificado.
+- Aportando sus habilidades en un grupo comunitario.
+- La IA filtra y sugiere **dónde puede aportar** según su perfil.
+
+### Dónde se canjean
+
+Los puntos son canjeables en aliados de Red Joven Bolívar:
+
+- Insumos escolares (cuadernos, útiles).
+- Descuentos en Platzi u otras plataformas de educación online.
+- Descuentos en universidades aliadas.
+- Descuentos en entidades privadas aliadas.
+- Cursos y talleres del SENA y Mi Sangre.
+
+### Verificación de la obra social (anti-fraude)
+
+- El líder del grupo o coordinador de Mi Sangre **confirma** la actividad
+  realizada.
+- Se requiere **mínimo 1 validador** para acreditar los puntos.
+- Las actividades tienen **puntos predefinidos** según su impacto.
+
+### El ciclo completo
+
+```
+Joven declara intereses
+        ↓
+Consigue oportunidad con ayuda de la IA
+        ↓
+Aporta sus habilidades a la comunidad
+        ↓
+Gana CivicCoins canjeables en formación
+        ↓
+Se forma → tiene más habilidades
+        ↓
+Consigue mejores oportunidades
+        ↓
+Vuelve a aportar más a la comunidad
+```
+
+### Nueva pantalla — Pantalla 5: CivicCoins *(solo documentación)*
+
+- **Saldo actual** de CivicCoins del joven.
+- **Historial de puntos ganados** (actividad, fecha, puntos).
+- **Historial de canjes** (aliado, descuento, fecha).
+- **Actividades sociales disponibles** sugeridas por la IA según el perfil.
+- **Catálogo de aliados** donde canjear puntos.
+
+### Nuevos módulos en el BACK
+
+| Módulo                   | Responsabilidad |
+|--------------------------|-----------------|
+| **CivicCoinsModule**     | Saldo, historial, acreditación y validación de actividades sociales. |
+| **RedemptionModule**     | Catálogo de aliados, canjes y descuentos disponibles. |
+| **SocialActivityModule** | Catálogo de actividades sociales, verificación por validador y asignación de puntos. |
+
+### AIModule — nuevas interfaces
+
+```typescript
+// MCP_HOOK: SOCIAL_MATCHING
+suggestSocialActivities(
+  youngProfile: YoungProfile,
+  availableActivities: SocialActivity[],
+): Promise<ActivitySuggestion[]>;
+```
 
 ---
 
@@ -195,3 +353,6 @@ puntos de integración marcados con `// MCP_HOOK: [nombre]`.
 4. **Fase 3 — Conexión real**: el front cambia los imports de mocks por el
    cliente de API; los shapes ya coinciden por diseño.
 5. **Fase 4 — IA**: implementar `AIModule` detrás de los `// MCP_HOOK`.
+6. **Fase 5 — Diferenciadores**: Motor de Rutas de Crecimiento (SkillsModule +
+   RouteModule, pantalla RutaPersonal) y CivicCoins (CivicCoinsModule +
+   RedemptionModule + SocialActivityModule, pantalla CivicCoins).

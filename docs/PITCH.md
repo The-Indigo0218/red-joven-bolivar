@@ -33,18 +33,28 @@ construyendo algo mucho más grande.
 
 ## 3. El diferenciador (45 seg)
 
-> "No solo conectamos jóvenes con oportunidades — le decimos al SENA que hay
-> 200 jóvenes queriendo estudiar sistemas en Cartagena sin cupos disponibles.
-> Eso es evidencia que mueve instituciones."
+Las bolsas de empleo te dicen que no clasificás.
+Nosotros te decimos qué hacer para clasificar,
+y te conectamos con quien puede enseñarte.
+Gratis. En tu barrio.
 
-Esa es la diferencia entre una bolsa de empleo y **Red Joven Bolívar**. Cada
-interés declarado es un voto de demanda. Sumados, se convierten en un mapa de
-calor de lo que la juventud de Bolívar quiere, barrio por barrio.
+Cuando un joven marca "Me interesa" en una oportunidad,
+la IA analiza su perfil y genera su Plan de Ruta personal:
+"Para este empleo te falta inglés técnico. El SENA tiene
+un curso en El Pozón con 12 cupos. ¿Te anoto?"
 
-No es una encuesta de una vez al año. Es **evidencia viva** que el SENA, las
-universidades y la Alcaldía pueden leer para abrir los cupos correctos en el
-lugar correcto. Convertimos intereses individuales en **demanda ciudadana
-colectiva**.
+Pero hay más. Cada vez que ese joven enseña lo que sabe,
+hace una obra social o aporta sus habilidades a la comunidad,
+gana CivicCoins — puntos canjeables en insumos escolares,
+descuentos en Platzi, universidades y aliados locales.
+
+Tus habilidades tienen valor.
+Enseñás, ganás, crecés, aportás más.
+El conocimiento circula, la comunidad sube junta
+y nadie se queda atrás por no tener plata.
+
+Eso no lo hace ninguna plataforma en Cartagena.
+Ni en Colombia.
 
 ## 4. La demo (30 seg)
 
