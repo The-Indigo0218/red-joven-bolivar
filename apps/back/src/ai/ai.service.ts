@@ -46,6 +46,8 @@ export interface ClosingOpportunityInput {
   opportunityTitle: string;
   barrio: string;
   slotsAvailable: number;
+  // El curso existe pero ya no tiene cupos: se ofrece con lista de espera.
+  isFull?: boolean;
 }
 
 export interface GrowthRouteGenerationInput {
@@ -416,10 +418,20 @@ Devolvé SOLO un JSON {"skillSlugs": string[], "confidence": number} donde skill
       return `¡Ya cumplís el perfil para «${input.targetTitle}»! Postúlate.`;
     }
     const missingLabels = input.missingSkills.map((s) => s.label).join(', ');
-    const closing = input.closingOpportunities[0];
-    return closing
-      ? `Para «${input.targetTitle}» te falta ${missingLabels}. ${closing.opportunityTitle} en ${closing.barrio} tiene ${closing.slotsAvailable} cupos — ¿te conectamos?`
-      : `Para «${input.targetTitle}» te falta ${missingLabels}. Aún no hay un curso de cierre disponible en tu zona.`;
+    const prefix = `Para «${input.targetTitle}» te falta ${missingLabels}.`;
+
+    // Preferimos un curso con cupo; si no hay, ofrecemos uno lleno con espera.
+    const available = input.closingOpportunities.find((c) => !c.isFull);
+    if (available) {
+      return `${prefix} ${available.opportunityTitle} en ${available.barrio} tiene ${available.slotsAvailable} cupos — ¿te conectamos?`;
+    }
+
+    const full = input.closingOpportunities[0];
+    if (full) {
+      return `${prefix} ${full.opportunityTitle} en ${full.barrio} no tiene cupos ahora — te anotamos en la lista de espera y avisamos al SENA.`;
+    }
+
+    return `${prefix} Aún no hay un curso de cierre disponible en tu zona.`;
   }
 
   private async routeHeadlineWithGemini(
@@ -428,15 +440,16 @@ Devolvé SOLO un JSON {"skillSlugs": string[], "confidence": number} donde skill
     const prompt = `Generá un titular motivador en español (1-2 frases, cercano, sin exagerar) para un joven de Cartagena que quiere acceder a «${input.targetTitle}».
 Ya tiene: ${JSON.stringify(input.matchingSkills.map((s) => s.label))}.
 Le falta: ${JSON.stringify(input.missingSkills.map((s) => s.label))}.
-Cursos/talleres gratis disponibles para cerrar la brecha: ${JSON.stringify(
+Cursos/talleres gratis para cerrar la brecha: ${JSON.stringify(
       input.closingOpportunities.map((c) => ({
         skill: c.skill.label,
         curso: c.opportunityTitle,
         barrio: c.barrio,
         cupos: c.slotsAvailable,
+        estado: c.isFull ? 'sin cupos (lista de espera)' : 'con cupo',
       })),
     )}.
-Mencioná la habilidad que falta y, si hay un curso, invitá a conectarse. Devolvé SOLO un JSON {"headline": string}.`;
+Mencioná la habilidad que falta. Si hay un curso con cupo, invitá a conectarse; si solo hay cursos sin cupo, invitá a anotarse en la lista de espera. Devolvé SOLO un JSON {"headline": string}.`;
 
     const { headline } = await this.gemini.generateJson<{ headline: string }>(
       prompt,

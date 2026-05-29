@@ -5,6 +5,7 @@ import { AiService, type DemandForecast } from '../ai/ai.service';
 import { coordsForBarrio } from '../common/barrios';
 import { labelForInterest } from '../common/interests';
 import { Opportunity } from '../opportunities/opportunity.entity';
+import { WaitlistEntry } from '../opportunities/waitlist-entry.entity';
 import { YoungProfile, type InterestSlug } from '../young/young.entity';
 
 export interface ZoneDemand {
@@ -26,6 +27,9 @@ export interface DemandGap {
   youngCount: number;
   slotsOffered: number;
   gap: number;
+  // Jóvenes en lista de espera de oportunidades de ese (barrio, interés):
+  // demanda real insatisfecha, la señal más fuerte para abrir nuevos cupos.
+  waitlistCount: number;
   headline: string;
 }
 
@@ -55,6 +59,11 @@ interface PairOfferRow {
   interest: InterestSlug;
   slotsOffered: number;
 }
+interface PairWaitlistRow {
+  barrio: string;
+  interest: InterestSlug;
+  waitlistCount: number;
+}
 
 const MAX_GAPS = 10;
 
@@ -69,6 +78,8 @@ export class DemandService {
     private readonly youngRepo: Repository<YoungProfile>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectRepository(WaitlistEntry)
+    private readonly waitlistRepo: Repository<WaitlistEntry>,
     private readonly aiService: AiService,
   ) {}
 
@@ -125,7 +136,7 @@ export class DemandService {
   // Brecha demanda/oferta por (barrio, interés): jóvenes que lo quieren vs.
   // cupos disponibles. La métrica estrella del dashboard.
   async getGaps(): Promise<DemandGap[]> {
-    const [demandRows, offerRows] = await Promise.all([
+    const [demandRows, offerRows, waitlistRows] = await Promise.all([
       this.youngRepo.query<PairDemandRow[]>(
         `SELECT barrio, i AS interest, COUNT(*)::int AS "youngCount"
            FROM young_profiles, unnest(interests) AS i
@@ -137,27 +148,47 @@ export class DemandService {
            FROM opportunities, unnest(interests) AS i
           GROUP BY barrio, i`,
       ),
+      // Lista de espera agregada por (barrio, interés) vía la oportunidad.
+      this.waitlistRepo.query<PairWaitlistRow[]>(
+        `SELECT o.barrio AS barrio, i AS interest,
+                COUNT(*)::int AS "waitlistCount"
+           FROM waitlist_entries w
+           JOIN opportunities o ON o.id = w."opportunityId",
+                unnest(o.interests) AS i
+          GROUP BY o.barrio, i`,
+      ),
     ]);
 
     const offerByKey = new Map<string, number>();
     for (const o of offerRows) {
       offerByKey.set(`${o.barrio}|${o.interest}`, o.slotsOffered);
     }
+    const waitlistByKey = new Map<string, number>();
+    for (const w of waitlistRows) {
+      waitlistByKey.set(`${w.barrio}|${w.interest}`, w.waitlistCount);
+    }
 
     const gaps: DemandGap[] = [];
     for (const d of demandRows) {
-      const slotsOffered = offerByKey.get(`${d.barrio}|${d.interest}`) ?? 0;
+      const key = `${d.barrio}|${d.interest}`;
+      const slotsOffered = offerByKey.get(key) ?? 0;
+      const waitlistCount = waitlistByKey.get(key) ?? 0;
       const gap = d.youngCount - slotsOffered;
       if (gap <= 0) continue;
+      const base = `${d.youngCount} jóvenes quieren ${labelForInterest(
+        d.interest,
+      ).toLowerCase()} en ${d.barrio} — solo ${slotsOffered} cupos disponibles`;
       gaps.push({
         interest: d.interest,
         barrio: d.barrio,
         youngCount: d.youngCount,
         slotsOffered,
         gap,
-        headline: `${d.youngCount} jóvenes quieren ${labelForInterest(
-          d.interest,
-        ).toLowerCase()} en ${d.barrio} — solo ${slotsOffered} cupos disponibles`,
+        waitlistCount,
+        headline:
+          waitlistCount > 0
+            ? `${base} y ${waitlistCount} en lista de espera`
+            : base,
       });
     }
 
