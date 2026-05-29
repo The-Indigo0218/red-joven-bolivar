@@ -1,0 +1,30 @@
+/* Fuentes — el @import debe preceder a cualquier otra regla CSS */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rjb-bg: #0A0F1E;
+  --rjb-surface: #111827;
+  --rjb-surface-2: #1F2937;
+  --rjb-primary: #F97316;
+  --rjb-primary-light: #FED7AA;
+  --rjb-accent: #06B6D4;
+  --rjb-text: #F9FAFB;
+  --rjb-text-muted: #9CA3AF;
+  --rjb-success: #10B981;
+  --rjb-warning: #F59E0B;
+  --rjb-border: #374151;
+}
+
+body {
+  background-color: var(--rjb-bg);
+  color: var(--rjb-text);
+  font-family: 'DM Sans', sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Syne', sans-serif;
+}

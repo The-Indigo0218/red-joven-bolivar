@@ -1,0 +1,10 @@
+{
+  "name": "red-joven-bolivar",
+  "private": true,
+  "workspaces": ["apps/front", "apps/back"],
+  "scripts": {
+    "front": "npm run dev --workspace=apps/front",
+    "back": "npm run start:dev --workspace=apps/back",
+    "install:all": "npm install"
+  }
+}
