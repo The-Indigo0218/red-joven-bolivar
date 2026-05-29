@@ -4,6 +4,8 @@ import { In, Repository } from 'typeorm';
 import { labelForInterest } from '../common/interests';
 import { affinityScore } from '../matching/affinity';
 import { Opportunity } from '../opportunities/opportunity.entity';
+import { Skill } from '../skills/skill.entity';
+import type { SocialActivity } from '../social-activity/social-activity.entity';
 import { YoungProfile, type InterestSlug } from '../young/young.entity';
 
 // ───────────────────────── Tipos de salida de la IA ─────────────────────────
@@ -25,6 +27,42 @@ export interface GroupSuggestion {
   interest: InterestSlug;
   suggestedName: string;
   candidateYoungIds: string[];
+}
+
+// ── Diferenciador 1: Rutas de Crecimiento ──
+export interface CvExtractionResult {
+  skills: Skill[];
+  confidence: number; // 0..1
+}
+
+export interface GapAnalysisResult {
+  matchingSkills: Skill[];
+  missingSkills: Skill[];
+}
+
+export interface ClosingOpportunityInput {
+  skill: Skill;
+  opportunityTitle: string;
+  barrio: string;
+  slotsAvailable: number;
+}
+
+export interface GrowthRouteGenerationInput {
+  targetTitle: string;
+  matchingSkills: Skill[];
+  missingSkills: Skill[];
+  closingOpportunities: ClosingOpportunityInput[];
+}
+
+export interface GrowthRouteGeneration {
+  affinityScore: number; // 0..100
+  headline: string;
+}
+
+// ── Diferenciador 2: CivicCoins ──
+export interface ActivitySuggestion {
+  activityId: string;
+  affinityScore: number; // 0..100
 }
 
 // Contrato del módulo de IA. El front nunca lo llama directo — todo pasa por el back.
@@ -71,6 +109,8 @@ export class AiService implements AiServiceContract {
     private readonly youngRepo: Repository<YoungProfile>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectRepository(Skill)
+    private readonly skillRepo: Repository<Skill>,
   ) {}
 
   // MCP_HOOK: AI_MATCHING
@@ -145,5 +185,86 @@ export class AiService implements AiServiceContract {
         candidateYoungIds: rows.map((r) => r.id),
       },
     ];
+  }
+
+  // MCP_HOOK: CV_PARSING
+  // Hoy: empareja el texto del CV (case-insensitive) contra el catálogo de
+  // habilidades por label/slug. Una integración LLM lo reemplaza aquí.
+  async extractSkillsFromCV(cvText: string): Promise<CvExtractionResult> {
+    const catalog = await this.skillRepo.find();
+    const haystack = cvText.toLowerCase();
+
+    const skills = catalog.filter((s) => {
+      const label = s.label.toLowerCase();
+      const slugWords = s.slug.replace(/-/g, ' ');
+      return haystack.includes(label) || haystack.includes(slugWords);
+    });
+
+    const confidence = skills.length
+      ? Math.min(0.95, Math.round((0.6 + (0.4 * skills.length) / catalog.length) * 100) / 100)
+      : 0.2;
+
+    return { skills, confidence };
+  }
+
+  // MCP_HOOK: GAP_ANALYSIS
+  // Diferencia de conjuntos por id: lo que el joven tiene vs. lo que la
+  // oportunidad exige.
+  analyzeSkillGap(
+    youngSkills: Skill[],
+    requiredSkills: Skill[],
+  ): GapAnalysisResult {
+    const haveIds = new Set(youngSkills.map((s) => s.id));
+    return {
+      matchingSkills: requiredSkills.filter((s) => haveIds.has(s.id)),
+      missingSkills: requiredSkills.filter((s) => !haveIds.has(s.id)),
+    };
+  }
+
+  // MCP_HOOK: ROUTE_GENERATION
+  // Hoy: score por cobertura de requisitos + titular generado a partir de la
+  // brecha y la oferta de cierre disponible.
+  generateGrowthRoute(input: GrowthRouteGenerationInput): GrowthRouteGeneration {
+    const total = input.matchingSkills.length + input.missingSkills.length;
+    const affinityScore = total
+      ? Math.round((100 * input.matchingSkills.length) / total)
+      : 100;
+
+    let headline: string;
+    if (input.missingSkills.length === 0) {
+      headline = `¡Ya cumplís el perfil para «${input.targetTitle}»! Postúlate.`;
+    } else {
+      const missingLabels = input.missingSkills.map((s) => s.label).join(', ');
+      const closing = input.closingOpportunities[0];
+      headline = closing
+        ? `Para «${input.targetTitle}» te falta ${missingLabels}. ${closing.opportunityTitle} en ${closing.barrio} tiene ${closing.slotsAvailable} cupos — ¿te conectamos?`
+        : `Para «${input.targetTitle}» te falta ${missingLabels}. Aún no hay un curso de cierre disponible en tu zona.`;
+    }
+
+    return { affinityScore, headline };
+  }
+
+  // MCP_HOOK: SOCIAL_MATCHING
+  // Hoy: afinidad de cada actividad según cobertura de habilidades requeridas
+  // y cercanía de barrio.
+  suggestSocialActivities(
+    young: { barrio: string; skillIds: string[] },
+    activities: SocialActivity[],
+  ): ActivitySuggestion[] {
+    const haveSkills = new Set(young.skillIds);
+
+    return activities
+      .map((a) => {
+        const required = a.requiredSkillIds;
+        const skillCoverage = required.length
+          ? required.filter((id) => haveSkills.has(id)).length / required.length
+          : 0.5; // sin requisitos: abierta a cualquiera
+        const barrioMatch = a.barrio === young.barrio ? 1 : 0;
+        const affinityScore = Math.round(
+          100 * (0.6 * skillCoverage + 0.4 * barrioMatch),
+        );
+        return { activityId: a.id, affinityScore };
+      })
+      .sort((x, y) => y.affinityScore - x.affinityScore);
   }
 }

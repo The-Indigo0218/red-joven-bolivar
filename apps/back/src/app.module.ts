@@ -10,6 +10,11 @@ import { DemandModule } from './demand/demand.module';
 import { GroupsModule } from './groups/groups.module';
 import { AiModule } from './ai/ai.module';
 import { CommonModule } from './common/common.module';
+import { SkillsModule } from './skills/skills.module';
+import { RouteModule } from './route/route.module';
+import { SocialActivityModule } from './social-activity/social-activity.module';
+import { CivicCoinsModule } from './civiccoins/civiccoins.module';
+import { RedemptionsModule } from './redemptions/redemptions.module';
 
 @Module({
   imports: [
@@ -35,6 +40,11 @@ import { CommonModule } from './common/common.module';
     GroupsModule,
     AiModule,
     CommonModule,
+    SkillsModule,
+    RouteModule,
+    SocialActivityModule,
+    CivicCoinsModule,
+    RedemptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
