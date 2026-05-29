@@ -52,12 +52,17 @@ export function buildMockRoute(
     ? (MOCK_OPPORTUNITY_SKILL_SLUGS[opportunityTitle] ?? [])
     : [];
   const targetSkills = skillsFromSlugs(targetSlugs);
-  const { matchingSkills, missingSkills } = analyzeSkillGap(youngSkills, targetSkills);
-  const total = matchingSkills.length + missingSkills.length;
-  const affinityScore = total ? Math.round((100 * matchingSkills.length) / total) : 100;
+  const { matchingSkills: matchedRequired, missingSkills } = analyzeSkillGap(
+    youngSkills,
+    targetSkills,
+  );
+  const total = matchedRequired.length + missingSkills.length;
+  const affinityScore = total
+    ? Math.round((100 * matchedRequired.length) / total)
+    : 100;
 
   let headline = 'Tu ruta personalizada en Cartagena.';
-  if (missingSkills.length === 0 && matchingSkills.length > 0) {
+  if (missingSkills.length === 0 && matchedRequired.length > 0) {
     headline = 'Vas muy bien: ya cubres las habilidades clave para esta oportunidad.';
   } else if (missingSkills.length > 0) {
     headline = `Estas cerca: refuerza ${missingSkills.map((s) => s.label).join(' y ')}.`;
@@ -68,7 +73,8 @@ export function buildMockRoute(
     youngId,
     affinityScore,
     headline,
-    matchingSkills,
+    // "Lo que ya tienes": todas las habilidades del joven, no solo las exigidas.
+    matchingSkills: youngSkills,
     missingSkills,
     closingOpportunities: [],
   };

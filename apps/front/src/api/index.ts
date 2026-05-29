@@ -1,4 +1,4 @@
-﻿import { USE_MOCK } from './config';
+import { USE_MOCK } from './config';
 import { httpClient } from './httpClient';
 import { mockClient } from './mockClient';
 

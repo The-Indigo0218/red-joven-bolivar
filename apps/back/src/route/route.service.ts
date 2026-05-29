@@ -59,10 +59,10 @@ export class RouteService {
       await this.skillsService.getOpportunitySkillsForGap(opportunityId);
 
     // MCP_HOOK: GAP_ANALYSIS
-    const { matchingSkills, missingSkills } = this.aiService.analyzeSkillGap(
-      youngSkills,
-      requiredSkills,
-    );
+    // matchedRequired = habilidades requeridas que el joven ya cubre (insumo del
+    // score y del titular). "Lo que ya tienes" muestra TODAS sus habilidades.
+    const { matchingSkills: matchedRequired, missingSkills } =
+      this.aiService.analyzeSkillGap(youngSkills, requiredSkills);
 
     const closingOpportunities = await this.findClosingOpportunities(
       missingSkills,
@@ -72,7 +72,7 @@ export class RouteService {
     // MCP_HOOK: ROUTE_GENERATION
     const { affinityScore, headline } = await this.aiService.generateGrowthRoute({
       targetTitle: target.title,
-      matchingSkills,
+      matchingSkills: matchedRequired,
       missingSkills,
       closingOpportunities: closingOpportunities.map<ClosingOpportunityInput>(
         (c) => ({
@@ -100,7 +100,9 @@ export class RouteService {
       opportunityId,
       youngId,
       affinityScore,
-      matchingSkills,
+      // "Lo que ya tienes": todas las habilidades del joven, no solo las que
+      // exige esta oportunidad, para que su CV siempre quede reflejado.
+      matchingSkills: youngSkills,
       missingSkills,
       closingOpportunities,
       headline,

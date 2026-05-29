@@ -45,6 +45,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
   } = useApp();
   const [activeTab, setActiveTab] = useState<OpportunityKind>('empleo');
   const [modalidadFilter, setModalidadFilter] = useState<OpportunityModality | 'todos'>('todos');
+  const [allCartagena, setAllCartagena] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const items = filterOpportunities(
@@ -52,6 +53,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
     activeTab,
     profile,
     modalidadFilter === 'todos' ? undefined : modalidadFilter,
+    allCartagena,
   );
 
   async function handleInterest(id: string) {
@@ -87,10 +89,34 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
       <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Oportunidades para vos</h1>
 
       {profile ? (
-        <p className="mb-6 text-sm" style={{ color: 'var(--rjb-text-muted)' }}>
-          Filtradas para <strong>{profile.name}</strong> en{' '}
-          <strong>{profile.barrio}</strong> según tus intereses.
-        </p>
+        <>
+          <p className="mb-3 text-sm" style={{ color: 'var(--rjb-text-muted)' }}>
+            {allCartagena ? (
+              <>
+                Mostrando oportunidades en <strong>toda Cartagena</strong> según tus
+                intereses. Las de <strong>{profile.barrio}</strong> aparecen primero.
+              </>
+            ) : (
+              <>
+                Filtradas para <strong>{profile.name}</strong> en{' '}
+                <strong>{profile.barrio}</strong> según tus intereses.
+              </>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAllCartagena((v) => !v)}
+            aria-pressed={allCartagena}
+            className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-colors"
+            style={{
+              borderColor: allCartagena ? 'var(--rjb-primary)' : 'var(--rjb-border)',
+              backgroundColor: allCartagena ? 'var(--rjb-primary)' : 'transparent',
+              color: allCartagena ? 'var(--rjb-bg)' : 'var(--rjb-primary)',
+            }}
+          >
+            {allCartagena ? '📍 Volver a mi barrio' : '🌎 Buscar en toda Cartagena'}
+          </button>
+        </>
       ) : (
         <div
           className="mb-6 rounded-xl px-4 py-3 text-sm border"
@@ -181,7 +207,7 @@ export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesF
       {!isLoadingOpportunities && !opportunitiesError && profile && items.length === 0 && (
         <EmptyState
           title="No hay oportunidades que coincidan"
-          description={`No encontramos ${TABS.find((t) => t.kind === activeTab)?.label.toLowerCase()} en ${profile.barrio} que coincidan con tus intereses${modalidadFilter !== 'todos' ? ` y modalidad ${modalityLabel(modalidadFilter)}` : ''}. Probá otra pestaña o actualizá tu perfil.`}
+          description={`No encontramos ${TABS.find((t) => t.kind === activeTab)?.label.toLowerCase()} en ${allCartagena ? 'toda Cartagena' : profile.barrio} que coincidan con tus intereses${modalidadFilter !== 'todos' ? ` y modalidad ${modalityLabel(modalidadFilter)}` : ''}.${allCartagena ? ' Probá otra pestaña o actualizá tu perfil.' : ' Probá «Buscar en toda Cartagena» o cambiá de pestaña.'}`}
         />
       )}
 

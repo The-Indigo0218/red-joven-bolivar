@@ -10,6 +10,7 @@ export function filterOpportunities(
   kind: OpportunityKind,
   profile: YoungProfileResponse | null,
   modalidad?: OpportunityModality,
+  allCartagena = false,
 ): Opportunity[] {
   return opportunities
     .filter((opp) => {
@@ -20,11 +21,20 @@ export function filterOpportunities(
       const interestMatch = opp.interests.some((interest) =>
         profile.interests.includes(interest),
       );
-      const barrioMatch = opp.barrio === profile.barrio;
+      // En modo "toda Cartagena" ignoramos el barrio para ampliar la oferta.
+      const barrioMatch = allCartagena || opp.barrio === profile.barrio;
 
       return interestMatch && barrioMatch;
     })
-    .sort((a, b) => b.slotsAvailable - a.slotsAvailable);
+    .sort((a, b) => {
+      // Si miramos toda la ciudad, priorizamos las del barrio del joven.
+      if (allCartagena && profile) {
+        const aLocal = a.barrio === profile.barrio ? 1 : 0;
+        const bLocal = b.barrio === profile.barrio ? 1 : 0;
+        if (aLocal !== bLocal) return bLocal - aLocal;
+      }
+      return b.slotsAvailable - a.slotsAvailable;
+    });
 }
 
 export function computeMatchScore(
