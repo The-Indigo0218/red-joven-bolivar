@@ -19,9 +19,10 @@ const TABS: Tab[] = [
 
 interface OpportunitiesFeedProps {
   onGoToProfile?: () => void;
+  onViewRoute?: (opportunityId: string) => void;
 }
 
-export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
+export function OpportunitiesFeed({ onGoToProfile, onViewRoute }: OpportunitiesFeedProps) {
   const {
     profile,
     opportunities,
@@ -147,6 +148,8 @@ export function OpportunitiesFeed({ onGoToProfile }: OpportunitiesFeedProps) {
               disabled={!profile || opp.slotsAvailable <= 0}
               loading={interestLoadingId === opp.id}
               onInterest={(id) => void handleInterest(id)}
+              onViewRoute={onViewRoute}
+              showRoute={Boolean(profile)}
             />
           ))}
         </div>

@@ -1,12 +1,20 @@
 import { API_BASE_URL } from './config';
 import { ApiRequestError } from './errors';
 import type {
+  CivicCoinsBalanceResponse,
+  CreateRedemptionRequest,
   CreateYoungProfileRequest,
   DemandDashboardResponse,
+  EarnCivicCoinsRequest,
+  EarnCivicCoinsResponse,
   ExpressInterestRequest,
+  GrowthRouteResponse,
   MatchResponse,
   OpportunitiesQuery,
   OpportunitiesResponse,
+  RedemptionCatalogResponse,
+  RedemptionResponse,
+  SuggestedActivitiesResponse,
   YoungProfileResponse,
 } from '../types';
 
@@ -48,6 +56,38 @@ export const httpClient = {
     },
     expressInterest(id: string, body: ExpressInterestRequest): Promise<MatchResponse> {
       return request<MatchResponse>(`/opportunities/${id}/interest`, { method: 'POST', body: JSON.stringify(body) });
+    },
+    getRoute(opportunityId: string, youngId: string): Promise<GrowthRouteResponse> {
+      return request<GrowthRouteResponse>(
+        `/opportunities/${opportunityId}/route?youngId=${encodeURIComponent(youngId)}`,
+      );
+    },
+  },
+  civiccoins: {
+    getBalance(youngId: string): Promise<CivicCoinsBalanceResponse> {
+      return request<CivicCoinsBalanceResponse>(`/civiccoins/${youngId}`);
+    },
+    suggestActivities(youngId: string): Promise<SuggestedActivitiesResponse> {
+      return request<SuggestedActivitiesResponse>(
+        `/civiccoins/activities?youngId=${encodeURIComponent(youngId)}`,
+      );
+    },
+    earn(body: EarnCivicCoinsRequest): Promise<EarnCivicCoinsResponse> {
+      return request<EarnCivicCoinsResponse>('/civiccoins/earn', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+    },
+  },
+  redemptions: {
+    getCatalog(): Promise<RedemptionCatalogResponse> {
+      return request<RedemptionCatalogResponse>('/redemptions/catalog');
+    },
+    redeem(body: CreateRedemptionRequest): Promise<RedemptionResponse> {
+      return request<RedemptionResponse>('/redemptions', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
     },
   },
   demand: {

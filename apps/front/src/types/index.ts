@@ -188,3 +188,105 @@ export interface GroupsResponse {
   items: GroupResponse[];
   total: number;
 }
+
+// ───────────────────────── Skills / Growth Route ─────────────────────────
+
+export type SkillCategory = 'tecnica' | 'blanda' | 'digital';
+
+export interface Skill {
+  id: string;
+  slug: string;
+  label: string;
+  category: SkillCategory;
+}
+
+export interface ClosingOpportunity {
+  skill: Skill;
+  opportunity: Opportunity;
+  slotsAvailable: number;
+}
+
+export interface GrowthRouteResponse {
+  opportunityId: string;
+  youngId: string;
+  affinityScore: number;
+  matchingSkills: Skill[];
+  missingSkills: Skill[];
+  closingOpportunities: ClosingOpportunity[];
+  headline: string;
+}
+
+// ───────────────────────── CivicCoins ─────────────────────────
+
+export interface CivicCoinHistoryItem {
+  id: string;
+  type: 'earned' | 'redeemed';
+  amount: number;
+  description: string;
+  validatedBy?: string;
+  createdAt: string;
+}
+
+export interface CivicCoinsBalanceResponse {
+  youngId: string;
+  balance: number;
+  history: CivicCoinHistoryItem[];
+}
+
+export interface EarnCivicCoinsRequest {
+  youngId: string;
+  activityId: string;
+  validatorId: string;
+}
+
+export interface EarnCivicCoinsResponse {
+  transactionId: string;
+  pointsEarned: number;
+  newBalance: number;
+  activity: string;
+}
+
+export interface SuggestedActivity {
+  id: string;
+  title: string;
+  description: string;
+  pointsReward: number;
+  category: string;
+  barrio: string;
+  requiredSkills: Skill[];
+  affinityScore: number;
+}
+
+export interface SuggestedActivitiesResponse {
+  items: SuggestedActivity[];
+}
+
+// ───────────────────────── Redemptions ─────────────────────────
+
+export type RedemptionCategory = 'insumos' | 'educacion' | 'universidad' | 'otro';
+
+export interface RedemptionCatalogItem {
+  id: string;
+  partner: string;
+  description: string;
+  pointsCost: number;
+  category: RedemptionCategory;
+  discount: number | null;
+}
+
+export interface RedemptionCatalogResponse {
+  items: RedemptionCatalogItem[];
+}
+
+export interface CreateRedemptionRequest {
+  youngId: string;
+  catalogItemId: string;
+}
+
+export interface RedemptionResponse {
+  redemptionId: string;
+  partner: string;
+  pointsSpent: number;
+  newBalance: number;
+  voucherCode: string;
+}
