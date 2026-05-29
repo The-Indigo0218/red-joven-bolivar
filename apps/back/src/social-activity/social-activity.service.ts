@@ -1,7 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SocialActivity } from './social-activity.entity';
+import {
+  SocialActivity,
+  type SocialActivityCategory,
+} from './social-activity.entity';
+
+export interface CreateSocialActivityInput {
+  title: string;
+  description: string;
+  pointsReward: number;
+  category: SocialActivityCategory;
+  barrio: string;
+  requiredSkillIds?: string[];
+}
+
+export interface SocialActivitiesResponse {
+  items: SocialActivity[];
+  total: number;
+}
 
 // Catálogo de actividades sociales que otorgan CivicCoins (Diferenciador 2).
 @Injectable()
@@ -11,8 +28,21 @@ export class SocialActivityService {
     private readonly activityRepo: Repository<SocialActivity>,
   ) {}
 
-  findAll(): Promise<SocialActivity[]> {
-    return this.activityRepo.find({ order: { pointsReward: 'DESC' } });
+  async findAll(): Promise<SocialActivitiesResponse> {
+    const [items, total] = await this.activityRepo.findAndCount({
+      order: { pointsReward: 'DESC' },
+    });
+    return { items, total };
+  }
+
+  async create(input: CreateSocialActivityInput): Promise<SocialActivity> {
+    const activity = await this.activityRepo.save(
+      this.activityRepo.create({
+        ...input,
+        requiredSkillIds: input.requiredSkillIds ?? [],
+      }),
+    );
+    return activity;
   }
 
   async findOne(id: string): Promise<SocialActivity> {
