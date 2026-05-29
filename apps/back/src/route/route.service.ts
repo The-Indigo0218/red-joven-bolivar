@@ -56,7 +56,7 @@ export class RouteService {
 
     const youngSkills = await this.skillsService.getYoungSkills(youngId);
     const requiredSkills =
-      await this.skillsService.getOpportunitySkills(opportunityId);
+      await this.skillsService.getOpportunitySkillsForGap(opportunityId);
 
     // MCP_HOOK: GAP_ANALYSIS
     const { matchingSkills, missingSkills } = this.aiService.analyzeSkillGap(

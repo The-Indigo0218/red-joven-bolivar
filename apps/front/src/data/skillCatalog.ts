@@ -18,8 +18,8 @@ export function extractSkillsFromText(cvText: string): Skill[] {
     const label = entry.label.toLowerCase();
     const slugWords = entry.slug.replace(/-/g, ' ');
     return haystack.includes(label) || haystack.includes(slugWords);
-  }).map((entry, index) => ({
-    id: `mock-skill-${index}-${entry.slug}`,
+  }).map((entry) => ({
+    id: `skill-${entry.slug}`,
     slug: entry.slug,
     label: entry.label,
     category: entry.category,

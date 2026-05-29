@@ -58,6 +58,9 @@ export const httpClient = {
     createProfile(body: CreateYoungProfileRequest): Promise<YoungProfileResponse> {
       return request<YoungProfileResponse>('/young/profile', { method: 'POST', body: JSON.stringify(body) });
     },
+    updateProfile(id: string, body: CreateYoungProfileRequest): Promise<YoungProfileResponse> {
+      return request<YoungProfileResponse>(`/young/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    },
     uploadCv(body: UploadCvRequest): Promise<UploadCvResponse> {
       return request<UploadCvResponse>('/young/cv', { method: 'POST', body: JSON.stringify(body) });
     },

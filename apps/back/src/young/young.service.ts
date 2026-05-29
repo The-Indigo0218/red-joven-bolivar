@@ -18,6 +18,12 @@ export class YoungService {
     return this.youngRepo.save(profile);
   }
 
+  async update(id: string, dto: CreateYoungProfileDto): Promise<YoungProfile> {
+    const profile = await this.findOne(id);
+    Object.assign(profile, dto);
+    return this.youngRepo.save(profile);
+  }
+
   async findOne(id: string): Promise<YoungProfile> {
     const profile = await this.youngRepo.findOne({ where: { id } });
     if (!profile) {

@@ -93,7 +93,7 @@ function toggleItem<T extends string>(list: T[], item: T): T[] {
 }
 
 export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
-  const { profile, saveProfile, clearProfile, isSavingProfile } = useApp();
+  const { profile, saveProfile, clearProfile, isSavingProfile, notifyCvSkillsUpdated } = useApp();
   const [form, setForm] = useState<FormState>(() =>
     profile
       ? {
@@ -223,7 +223,10 @@ export function OnboardingProfile({ onComplete }: OnboardingProfileProps) {
         youngId={profile?.id ?? ''}
         youngName={profile?.name}
         onClose={() => setCvModalOpen(false)}
-        onSuccess={(response) => setCvResult(response)}
+        onSuccess={(response) => {
+          setCvResult(response);
+          notifyCvSkillsUpdated();
+        }}
       />
 
       <form

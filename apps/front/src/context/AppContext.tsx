@@ -71,6 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [opportunitiesError, setOpportunitiesError] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [interestLoadingId, setInterestLoadingId] = useState<string | null>(null);
+  const [cvSkillsRevision, setCvSkillsRevision] = useState(0);
 
   const refreshOpportunities = useCallback(async () => {
     setIsLoadingOpportunities(true);
@@ -116,17 +117,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const saveProfile = useCallback(async (request: CreateYoungProfileRequest) => {
     setIsSavingProfile(true);
     try {
-      const created = await api.young.createProfile(request);
-      if (profile?.id && profile.id !== created.id) {
+      const saved = profile?.id
+        ? await api.young.updateProfile(profile.id, request)
+        : await api.young.createProfile(request);
+
+      if (profile?.id && profile.id !== saved.id) {
         clearStoredInterests(setInterests);
       }
-      setProfile(created);
-      saveToStorage(storageKeys.profile, created);
-      return created;
+
+      setProfile(saved);
+      saveToStorage(storageKeys.profile, saved);
+      return saved;
     } finally {
       setIsSavingProfile(false);
     }
   }, [profile?.id]);
+
+  const notifyCvSkillsUpdated = useCallback(() => {
+    setCvSkillsRevision((n) => n + 1);
+  }, []);
 
   const clearProfile = useCallback(() => {
     setProfile(null);
@@ -195,6 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       profile,
       opportunities,
       interests,
+      cvSkillsRevision,
       isLoadingOpportunities,
       opportunitiesError,
       isSavingProfile,
@@ -205,12 +215,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isInterestedIn,
       isWaitlisted,
       getWaitlistPosition,
+      notifyCvSkillsUpdated,
       refreshOpportunities,
     }),
     [
       profile,
       opportunities,
       interests,
+      cvSkillsRevision,
       isLoadingOpportunities,
       opportunitiesError,
       isSavingProfile,
@@ -221,6 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isInterestedIn,
       isWaitlisted,
       getWaitlistPosition,
+      notifyCvSkillsUpdated,
       refreshOpportunities,
     ],
   );

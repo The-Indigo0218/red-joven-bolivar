@@ -45,6 +45,20 @@ export class SkillsService {
     return this.skillRepo.find({ where: { id: In(links.map((l) => l.skillId)) } });
   }
 
+  // Para el gap de la ruta: requisitos del empleo (required=true) o, si no hay,
+  // habilidades que la oportunidad desarrolla (cursos/estudios).
+  async getOpportunitySkillsForGap(opportunityId: string): Promise<Skill[]> {
+    const links = await this.opportunitySkillRepo.find({
+      where: { opportunityId },
+    });
+    if (links.length === 0) return [];
+
+    const required = links.filter((l) => l.required);
+    const targetLinks = required.length > 0 ? required : links;
+    const skillIds = targetLinks.map((l) => l.skillId);
+    return this.skillRepo.find({ where: { id: In(skillIds) } });
+  }
+
   // Oportunidades que DESARROLLAN (required=false) alguna de las habilidades
   // dadas: candidatas a cerrar la brecha de una ruta.
   findClosingLinks(skillIds: string[]): Promise<OpportunitySkill[]> {

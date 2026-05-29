@@ -2,6 +2,7 @@ const KEYS = {
   profile: 'rjb-young-profile',
   opportunities: 'rjb-opportunities',
   matches: 'rjb-matches',
+  youngSkills: 'rjb-young-skills',
 } as const;
 
 export function loadFromStorage<T>(key: string, fallback: T): T {

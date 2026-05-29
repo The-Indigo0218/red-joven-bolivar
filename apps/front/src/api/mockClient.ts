@@ -16,6 +16,7 @@ import type {
   Opportunity,
   RedemptionCatalogResponse,
   RedemptionResponse,
+  Skill,
   SuggestedActivitiesResponse,
   UploadCvRequest,
   UploadCvResponse,
@@ -99,6 +100,29 @@ function waitlistForOpportunity(opportunityId: string): InterestResult[] {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+type YoungSkillsMap = Record<string, Skill[]>;
+
+function getYoungSkillsMap(): YoungSkillsMap {
+  return loadFromStorage<YoungSkillsMap>(storageKeys.youngSkills, {});
+}
+
+function saveYoungSkills(youngId: string, skills: Skill[]): void {
+  const map = getYoungSkillsMap();
+  const byId = new Map<string, Skill>();
+  for (const skill of map[youngId] ?? []) {
+    byId.set(skill.id, skill);
+  }
+  for (const skill of skills) {
+    byId.set(skill.id, skill);
+  }
+  map[youngId] = [...byId.values()];
+  saveToStorage(storageKeys.youngSkills, map);
+}
+
+function getYoungSkills(youngId: string): Skill[] {
+  return getYoungSkillsMap()[youngId] ?? [];
+}
+
 export const mockClient = {
   young: {
     async createProfile(body: CreateYoungProfileRequest): Promise<YoungProfileResponse> {
@@ -109,11 +133,22 @@ export const mockClient = {
       };
       return delay(created);
     },
+    async updateProfile(id: string, body: CreateYoungProfileRequest): Promise<YoungProfileResponse> {
+      const updated: YoungProfileResponse = {
+        id,
+        ...body,
+        createdAt: new Date().toISOString(),
+      };
+      return delay(updated);
+    },
     async uploadCv(body: UploadCvRequest): Promise<UploadCvResponse> {
       const skills = extractSkillsFromText(body.cvText);
       const confidence = skills.length
         ? Math.min(0.95, Math.round((0.6 + (0.4 * skills.length) / 9) * 100) / 100)
         : 0.2;
+      if (body.youngId) {
+        saveYoungSkills(body.youngId, skills);
+      }
       return delay({ skills, confidence });
     },
   },
@@ -206,9 +241,14 @@ export const mockClient = {
     },
     async getRoute(opportunityId: string, youngId: string): Promise<GrowthRouteResponse> {
       const opportunity = getOpportunities().find((o) => o.id === opportunityId);
-      const route = buildMockRoute(opportunityId, youngId);
+      const route = buildMockRoute(
+        opportunityId,
+        youngId,
+        opportunity?.title,
+        getYoungSkills(youngId),
+      );
       if (opportunity) {
-        route.headline = `Ruta hacia "${opportunity.title}" — ${route.affinityScore}% de afinidad.`;
+        route.headline = `Ruta hacia "${opportunity.title}" — ${route.affinityScore}% de afinidad. ${route.headline}`;
       }
       return delay(route);
     },

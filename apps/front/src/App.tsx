@@ -20,7 +20,7 @@ import { CivicCoinsScreen } from './components/civiccoins/CivicCoinsScreen';
 
 function AppContent() {
 
-  const { profile } = useApp();
+  const { profile, cvSkillsRevision } = useApp();
 
   const [currentView, setCurrentView] = useState<View>('onboarding');
 
@@ -88,7 +88,7 @@ function AppContent() {
 
           <RutaPersonal
 
-            key={`${routeOpportunityId}-${profile?.id ?? 'none'}`}
+            key={`${routeOpportunityId}-${profile?.id ?? 'none'}-${cvSkillsRevision}`}
 
             opportunityId={routeOpportunityId}
 

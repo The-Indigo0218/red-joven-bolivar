@@ -21,6 +21,7 @@ export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPers
     isWaitlisted,
     getWaitlistPosition,
     interestLoadingId,
+    cvSkillsRevision,
   } = useApp();
   const [route, setRoute] = useState<GrowthRouteResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,8 @@ export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPers
 
     const youngId = profile.id;
     let cancelled = false;
+    setLoading(true);
+    setError(null);
 
     async function loadRoute() {
       try {
@@ -61,7 +64,7 @@ export function RutaPersonal({ opportunityId, onBack, onRouteStarted }: RutaPers
     return () => {
       cancelled = true;
     };
-  }, [opportunityId, profile]);
+  }, [opportunityId, profile, cvSkillsRevision]);
 
   function handleStartRoute() {
     setStarted(true);
