@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rjb-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: red_joven_bolivar
+    # 5432 del host suele estar ocupado por otros proyectos; exponemos 5433.
+    # Ajustá DATABASE_PORT=5433 en apps/back/.env para que el back lo use.
+    ports:
+      - '5433:5432'
+    volumes:
+      - rjb_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d red_joven_bolivar']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rjb_pgdata:
