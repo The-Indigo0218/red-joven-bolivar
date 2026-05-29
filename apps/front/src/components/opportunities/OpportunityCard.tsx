@@ -1,27 +1,33 @@
-// Card de una oportunidad en el feed.
-// Estructura lista para construir — el botón "Me interesa" aún no dispara lógica.
-
 import type { Opportunity } from '../../types';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
+  interested?: boolean;
+  disabled?: boolean;
   onInterest?: (id: string) => void;
 }
 
-export function OpportunityCard({ opportunity, onInterest }: OpportunityCardProps) {
+export function OpportunityCard({
+  opportunity,
+  interested = false,
+  disabled = false,
+  onInterest,
+}: OpportunityCardProps) {
   const { id, title, organization, requirements, slotsAvailable, slotsTotal, barrio } =
     opportunity;
 
+  const noSlots = slotsAvailable <= 0;
+
   return (
     <article
-      className="rounded-2xl p-5 border flex flex-col gap-3"
+      className="rounded-2xl p-4 sm:p-5 border flex flex-col gap-3"
       style={{
         backgroundColor: 'var(--rjb-surface)',
-        borderColor: 'var(--rjb-border)',
+        borderColor: interested ? 'var(--rjb-success)' : 'var(--rjb-border)',
       }}
     >
       <header>
-        <h3 className="text-lg font-bold">{title}</h3>
+        <h3 className="text-base sm:text-lg font-bold">{title}</h3>
         <p className="text-sm" style={{ color: 'var(--rjb-accent)' }}>
           {organization}
         </p>
@@ -30,23 +36,33 @@ export function OpportunityCard({ opportunity, onInterest }: OpportunityCardProp
         </p>
       </header>
 
-      <ul className="text-sm list-disc list-inside" style={{ color: 'var(--rjb-text-muted)' }}>
+      <ul
+        className="text-sm list-disc list-inside"
+        style={{ color: 'var(--rjb-text-muted)' }}
+      >
         {requirements.map((req) => (
           <li key={req}>{req}</li>
         ))}
       </ul>
 
-      <footer className="flex items-center justify-between mt-2">
-        <span className="text-sm font-semibold" style={{ color: 'var(--rjb-success)' }}>
+      <footer className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-2">
+        <span
+          className="text-sm font-semibold"
+          style={{ color: noSlots ? 'var(--rjb-warning)' : 'var(--rjb-success)' }}
+        >
           {slotsAvailable} / {slotsTotal} cupos
         </span>
         <button
           type="button"
           onClick={() => onInterest?.(id)}
-          className="px-4 py-2 rounded-lg text-sm font-semibold"
-          style={{ backgroundColor: 'var(--rjb-primary)', color: 'var(--rjb-bg)' }}
+          disabled={disabled || interested || noSlots}
+          className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: interested ? 'var(--rjb-success)' : 'var(--rjb-primary)',
+            color: 'var(--rjb-bg)',
+          }}
         >
-          Me interesa
+          {interested ? 'Interés registrado' : noSlots ? 'Sin cupos' : 'Me interesa'}
         </button>
       </footer>
     </article>
